@@ -55,6 +55,9 @@ internal sealed partial class ActionSection
     private void UpdateVersionActionAvailability()
     {
         _redownloadButton.Visible = LauncherBranchCatalog.SelectedVersionInstalled(_versions.Branch, _versions.Branches);
+        // Redownload may interrupt a stuck download on purpose, but must not
+        // delete the files a starting game is loading.
+        _redownloadButton.Disabled = _versions.LaunchInProgress;
         if (_versionMaintenanceGroup != null)
             _versionMaintenanceGroup.Visible = _redownloadButton.Visible;
     }

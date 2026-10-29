@@ -10,7 +10,7 @@ internal sealed partial class LauncherController
 {
     private void CopyVanillaToModdedPressed()
     {
-        if (_saveOperation != SaveOperation.None)
+        if (!CanStartSaveOperation)
             return;
         _view.ShowConfirmation(
             "Copy all vanilla profiles on this device to their matching modded profiles? Existing matching modded profiles will be replaced and backed up. Progress and history are copied; active runs are excluded, and any active modded runs in the replaced profiles are cleared. Vanilla profiles stay unchanged. Copied saves will be included in your next Steam sync.",
@@ -22,7 +22,7 @@ internal sealed partial class LauncherController
 
     private void StartVanillaProfileCopy()
     {
-        if (_saveOperation != SaveOperation.None)
+        if (!CanStartSaveOperation)
             return;
         try
         {

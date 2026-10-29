@@ -48,6 +48,7 @@ internal sealed partial class LauncherController
             _downloads
         );
         _branchSwitch.GameBranchApplied += RefreshModsPresentation;
+        _launch.LaunchInProgressChanged += RefreshSaveSyncPresentation;
         _updates = new LauncherUpdateCoordinator(
             model,
             view,

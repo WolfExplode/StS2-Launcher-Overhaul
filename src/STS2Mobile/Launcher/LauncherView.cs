@@ -227,7 +227,11 @@ internal sealed partial class LauncherView
         => SetVersions(_versions with { SelectedVersionOperationRunning = running });
 
     internal void SetWorkshopButtonsDisabled(bool disabled) => Actions.SetWorkshopButtonsDisabled(disabled);
-    internal void SetLaunchControlsDisabled(bool disabled) => Actions.SetLaunchControlsDisabled(disabled);
+    internal void SetLaunchInProgress(bool inProgress)
+    {
+        Actions.SetLaunchControlsDisabled(inProgress);
+        SetVersions(_versions with { LaunchInProgress = inProgress });
+    }
     internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation, bool busy)
         => Actions.SetSaveSyncPresentation(presentation, busy);
     internal void SetModsPresentationChecking()

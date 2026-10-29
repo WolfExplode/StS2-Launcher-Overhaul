@@ -66,7 +66,7 @@ internal sealed partial class LauncherController
 
     private void StartAutomaticSaveSync()
     {
-        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir) || !CanStartSaveOperation)
             return;
         if (Interlocked.CompareExchange(ref _automaticSaveSyncStarted, 1, 0) != 0)
             return;
@@ -81,10 +81,12 @@ internal sealed partial class LauncherController
     // an unresolved conflict and the service's persisted status. Nothing else
     // is remembered, so every caller gets the same page for the same state.
     private void RefreshSaveSyncPresentation()
-        => _view.SetSaveSyncPresentation(
-            CurrentSaveSyncPresentation(),
-            busy: _saveOperation != SaveOperation.None
-        );
+        => _view.SetSaveSyncPresentation(CurrentSaveSyncPresentation(), busy: !CanStartSaveOperation);
+
+    // Launch cancels a running sync before it starts the game, so none may
+    // start while the game is starting from the local saves.
+    private bool CanStartSaveOperation
+        => _saveOperation == SaveOperation.None && !_launch.LaunchInProgress;
 
     private LauncherSaveSyncPresentation CurrentSaveSyncPresentation()
     {
@@ -102,7 +104,7 @@ internal sealed partial class LauncherController
         bool overwriteConfirmed
     )
     {
-        if (_saveOperation != SaveOperation.None)
+        if (!CanStartSaveOperation)
             return;
         if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir)
             || !SaveSyncService.TryGetActive(out var service))

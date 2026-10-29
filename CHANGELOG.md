@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-29 - Launch locks
+
+- While a launch is in progress, the game version can no longer be switched, checked or refreshed, and "Redownload selected version" is disabled. Before, these stayed usable while the game was starting, and a switch or redownload could repair or delete the files it was loading.
+- Save sync and profile copy can no longer start while a launch is in progress. Before, Play cancelled a running sync and then left "Sync now" pressable while the game started from the local saves.
+- An automatic sync blocked by a running save operation or launch no longer counts as done, so the next sign-in can still start it.
+- The launch coordinator reports when a launch starts and ends; the view and the Saves page both draw from that.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers the version lock during a launch, but was not run.
+
 ## 2026-10-29 - Versions page state
 
 - The version selector, update button and version list tools on Home and the Versions page are drawn from one state: the selected version, the version list, the last update check, and whether a check, list refresh or download is running. Before, each section kept its own copy, and four separate calls turned the controls on and off.

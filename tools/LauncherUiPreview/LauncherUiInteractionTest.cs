@@ -730,6 +730,12 @@ internal static class LauncherUiInteractionTest
         view.SetRefreshGameVersionsBusy(false);
         Expect(!selector.Disabled && !FindVisibleButton(root, "Refresh list").Disabled,
             "The version controls stayed locked after every operation finished.");
+        view.SetLaunchInProgress(true);
+        Expect(selector.Disabled && FindVisibleButton(root, "Redownload selected version").Disabled,
+            "A starting game left its version switchable or its files removable.");
+        view.SetLaunchInProgress(false);
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Redownload selected version").Disabled,
+            "A finished launch attempt left the version controls locked.");
 
         var betaIndex = Enumerable.Range(0, selector.ItemCount)
             .Single(index => string.Equals(

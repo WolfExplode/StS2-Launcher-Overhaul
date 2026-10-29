@@ -190,7 +190,8 @@ internal sealed partial class LauncherLaunchCoordinator
         _launchInProgress = inProgress;
         if (!inProgress)
             _activeLaunchAttempt = null;
-        _view.SetLaunchControlsDisabled(inProgress);
+        _view.SetLaunchInProgress(inProgress);
+        LaunchInProgressChanged?.Invoke();
     }
 
     internal void RestoreAfterFailedHandoff(string attemptId)

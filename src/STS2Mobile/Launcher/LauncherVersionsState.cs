@@ -13,16 +13,18 @@ internal readonly record struct LauncherVersionsState(
     LauncherVersionCheckOutcome CheckOutcome,
     bool CheckingForUpdates,
     bool RefreshingList,
-    bool SelectedVersionOperationRunning
+    bool SelectedVersionOperationRunning,
+    bool LaunchInProgress
 )
 {
     internal static LauncherVersionsState Initial
         => new(SteamGameBranch.Public, Array.Empty<LauncherBranchCatalog.BranchOption>(),
-            LauncherVersionCheckOutcome.None, false, false, false);
+            LauncherVersionCheckOutcome.None, false, false, false, false);
 
     // Changing the version, checking it or refreshing the list while another
-    // of these runs would act on files or results the running one replaces.
-    internal bool Busy => CheckingForUpdates || RefreshingList || SelectedVersionOperationRunning;
+    // of these runs, or while the game starts from the selected files, would
+    // act on files or results the running one depends on.
+    internal bool Busy => CheckingForUpdates || RefreshingList || SelectedVersionOperationRunning || LaunchInProgress;
 
     // A different selection or branch list makes the last check describe
     // something that is no longer shown.

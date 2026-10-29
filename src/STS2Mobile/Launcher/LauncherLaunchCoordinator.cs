@@ -6,6 +6,8 @@ internal sealed partial class LauncherLaunchCoordinator
     private readonly LauncherView _view;
     private readonly LauncherDiagnosticsCoordinator _diagnostics;
     private bool _launchInProgress;
+    internal event System.Action LaunchInProgressChanged;
+    internal bool LaunchInProgress => _launchInProgress;
     private LaunchAttemptContext _activeLaunchAttempt;
 
     internal LauncherLaunchCoordinator(
