@@ -119,6 +119,7 @@ public partial class PreviewRoot : Control
         {
             await AssertViewportRestore(previewViewport);
             LauncherUiInteractionTest.Run(_previewView, _previewRoot);
+            LauncherUiInteractionTest.AssertControllerDownloadEventOrder(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertModsRefreshRejectsStaleCompletionAsync(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertModsScrollAfterListGrowthAsync(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertTabletModsScrollingAsync(this);

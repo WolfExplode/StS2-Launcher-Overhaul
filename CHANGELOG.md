@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Exercise download events through the controller
+
+- Added a fake model that emits running, progress, completion and stopped events through the real controller wiring. The preview checks that version controls stay locked through completion and unlock only after the stopped event; the completion fixture intentionally exercises failed runtime validation. Existing touch emulation also checks tap and drag behavior on a mod toggle.
+- The full launcher preview suite passed, including the ImportVanillaSaves desktop fixture.
+
 ## 2026-10-29 - Draw download controls from one state
 
 - The download coordinator now owns the phase, action text and progress presentation. One view method draws the controls, and the selected-version operation event controls whether the download action is disabled. Completion, failure and cancellation clear stale progress. Update and download result bundles now carry status and log messages only.

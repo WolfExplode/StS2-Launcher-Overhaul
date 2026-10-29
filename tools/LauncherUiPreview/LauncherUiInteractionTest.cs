@@ -13,6 +13,45 @@ namespace LauncherUiPreview;
 
 internal static class LauncherUiInteractionTest
 {
+    private sealed class FakeDownloadModel : LauncherModel
+    {
+        internal FakeDownloadModel(string dataDir) : base(dataDir) { }
+        internal void SetRunning(bool running) => RaiseSelectedVersionOperationRunningChanged(running);
+        internal void Progress(string text) => RaiseDownloadProgressChanged(STS2Mobile.Steam.DepotDownloader.DownloadProgress.Status(text));
+        internal void Complete(BranchInstallCompletion completion) => RaiseDownloadCompleted(completion);
+    }
+
+    internal static void AssertControllerDownloadEventOrder(LauncherView view, Control root)
+    {
+        using var model = new FakeDownloadModel(AppPaths.AppPrivateDataDir);
+        var dispatch = new ConcurrentQueue<Action>();
+        var controller = new LauncherController(model, view, dispatch.Enqueue);
+        void Drain() { while (dispatch.TryDequeue(out var action)) action(); }
+        typeof(LauncherController).GetMethod("WireModelEvents", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(controller, null);
+        view.ShowLaunchActions(showUpdate: true);
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
+        view.SetUpdateCheckBusy(false);
+        view.SetLaunchInProgress(false);
+        view.SelectDestination(LauncherDestination.Versions);
+        model.SetRunning(true);
+        Drain();
+        Expect(FindVisibleButton(root, "Check for updates").Disabled && FindVisibleButton(root, "Refresh list").Disabled,
+            "The controller must lock version actions when a selected-version operation starts.");
+        model.Progress("Preparing test files");
+        Drain();
+        var hash = new string('a', 64);
+        model.Complete(new BranchInstallCompletion("public", Guid.NewGuid(), new GameIdentity("public", hash, hash, hash)));
+        Drain();
+        view.SelectDestination(LauncherDestination.Versions);
+        var selector = Descendants<OptionButton>(FindUniqueVisibleNamed<Control>(root, "GameVersionSelection")).Single(IsLiveAndVisible);
+        Expect(selector.Disabled && FindVisibleButton(root, "Refresh list").Disabled,
+            "Completion must not unlock version actions before the operation ends.");
+        model.SetRunning(false);
+        Drain();
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Refresh list").Disabled,
+            "The controller must unlock version actions after the running event ends.");
+    }
+
     internal static async Task AssertModsRefreshRejectsStaleCompletionAsync(LauncherView view, Control root)
     {
         var selectionPath = AppPaths.AppPrivateModSelectionPath;
