@@ -1,7 +1,5 @@
 # Testing needed
 
-Updated: 2026-10-26
-
 Use the smallest test that exercises the affected behavior. Do not turn desktop, fake-service, source inspection, or one-device evidence into a broader claim.
 
 ## Required local checks
@@ -29,16 +27,6 @@ The local suites cover:
 
 The save suite uses one deterministic `FakeSaveRemote`; it does not prove Steam transport. Desktop mod fixtures do not prove Android activation or an in-game effect.
 
-## Published RC4 device evidence
+## Device results
 
-The exact [v0.2.429 RC4](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.429-issue38-arm64-rc4) APK passed 10/10 launches on Samsung `SM-F971B`, Android 17 / API 37: four cold, four warm, one background/resume, and one lock/unlock. Each attempt validated identity/runtime-pack/patch compatibility and completed the active handoff once with no launcher overlay left visible. Saves, credentials, Steam Cloud inventory, and unrelated branch/runtime data were unchanged.
-
-That result does not prove:
-
-- The original Pixel 9 or Xiaomi 17 Ultra reporter flows; confirmation is still pending.
-- Every Android version, device, GPU/driver, orientation, or accessibility configuration.
-- Every Steam branch or interruption point on physical storage.
-- Real Steam authentication or save enumerate/download/upload/commit/read-back on RC4.
-- Android mod activation or a visible importer effect on RC4.
-
-Record exact APK, commit, package/version/signer/hash, device, Android/API, ABI, selected branch, renderer, test actions, and failures for every future device result.
+Follow the [Android validation runbook](runbook-android-validation.md) for device checks. Record exact APK, commit, package/version/signer/hash, device, Android/API, ABI, selected branch, renderer, test actions, and failures for every device result.

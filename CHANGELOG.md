@@ -26,7 +26,7 @@
 - Repaired the existing preload lookup to accept publicized Android members while preserving all field and method shape checks and loading budgets.
 - Repaired the existing Mono bootstrap to leave its native engine host GC-safe after first delegate creation; subsequent callbacks retain their existing transitions.
 - Consolidated the older fix PR's test scaffolding into the existing preload test file and extended the existing probe with an actual Android Mono GC regression.
-- Published at the user's request after local checks and two full Modded/two Vanilla phone passes. Full device acceptance and intermittent freeze resolution remain pending; see [release notes](docs/release-notes/v0.2.435-preload-repair-local-r2.md).
+- Published at the user's request after local checks and two full Modded/two Vanilla phone passes. Full device acceptance and intermittent freeze resolution remain pending; see [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.435-preload-repair-local-r2).
 
 ## 2026-10-02 - v0.2.434-cleanup-local launch repairs and code cleanup
 
@@ -34,7 +34,7 @@
 - Consolidated menu readiness, diagnostic marker reads, file hashing, authentication retries, mod-result validation and Android restart decisions into their existing owners.
 - Removed superseded wrappers and the silent native sound subsystem; consolidated 301 source fragments into 63 responsibility files.
 - Preserved launch contracts, stored formats, saves, credentials, mod selection and the existing package/signing channel.
-- See [release notes](docs/release-notes/v0.2.434-cleanup-local.md) for local validation and pending physical-device acceptance.
+- See [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.434-cleanup-local) for local validation and pending physical-device acceptance.
 
 ## 2026-09-06 - v0.2.431 launcher and startup improvements
 
@@ -42,7 +42,7 @@
 - Added GitHub diagnostic bug reports and verified in-app APK updates.
 - Unified startup task ownership, scene readiness, Android restart requests, and safe timeout handling.
 - Preserved the previous v0.2.430 release FMOD/PCK preparation fixes by merging their source into main.
-- See [release notes](docs/release-notes/v0.2.431.md) for validation and device-test limits.
+- See [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.431) for validation and device-test limits.
 
 ## 2026-08-22 - Issue #38 runtime identity and ARM64 RC4
 

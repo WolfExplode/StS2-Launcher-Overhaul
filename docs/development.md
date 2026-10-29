@@ -116,8 +116,7 @@ gradle -p android testMonoReleaseUnitTest --rerun-tasks
 
 If generated outputs contain unavailable OneDrive placeholders, a task-local Gradle init script can direct outputs to a local cache. Keep it outside production build dependencies; source, inputs and signing stay unchanged.
 
-For emulator startup/input checks, see
-[the responsiveness investigation](startup-responsiveness-2026-09-07.md) and
+For emulator startup/input checks, use `scripts/test-android-emulator-startup.ps1` and
 [the isolated Android harness](../tools/AndroidStartupHarness/README.md).
 
 Run the focused launcher/mod test against the already-downloaded representative

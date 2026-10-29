@@ -1,7 +1,5 @@
 # Android Steam login validation
 
-Updated: 2026-10-26. The RC4 results below describe that earlier build.
-
 ## Implementation boundary
 
 Steam sign-in is required to verify ownership, download the game, and synchronize saves. Offline launch depends on saved credentials, a matching ownership record, and a downloaded game that is ready to launch. Missing saved credentials lead to the login screen; a failed sign-in asks the user to sign in again.
@@ -31,7 +29,5 @@ The focused save tests do not validate authentication. Their fake remote proves 
 - Steam Guard interaction.
 - Real authentication, ownership, and download.
 - Process death and resume behavior.
-
-The earlier RC4 10/10 device-launch matrix reused the installed Steam session and selected `public-beta` runtime. It did not exercise a fresh password handoff, Steam Guard, ownership discovery, a live game update, or real save transfer. That matrix establishes runtime identity and launcher handoff for RC4; it does not establish those authentication and transfer flows for the current release.
 
 For diagnostics, prefer **Help → Diagnostics → Create support report** and a focused logcat window. Review both before sharing. Never publish passwords, Steam Guard codes, refresh/session tokens, QR/login payloads, account identifiers, private save data, or unreviewed full logs.
