@@ -100,7 +100,7 @@ internal static class LauncherUiInteractionTest
         var scroll = FindUniqueVisibleNamed<ScrollContainer>(root, "LauncherPrimaryScroll");
         GD.Print("MODS_SCROLL_BEFORE_GROWTH=" + Geometry());
 
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(6);
         root.GetViewport().GuiReleaseFocus();
         scroll.ScrollVertical = 0;
@@ -123,6 +123,10 @@ internal static class LauncherUiInteractionTest
         {
             Position = point, GlobalPosition = point, ButtonIndex = MouseButton.WheelDown, Pressed = true, Factor = 1,
         }, true);
+        root.GetViewport().PushInput(new InputEventMouseButton
+        {
+            Position = point, GlobalPosition = point, ButtonIndex = MouseButton.WheelDown, Pressed = false,
+        }, true);
         await Frames(4);
         Expect(scroll.ScrollVertical > 0, "Wheel input must scroll the grown mod list: " + Geometry());
 
@@ -137,6 +141,7 @@ internal static class LauncherUiInteractionTest
         var firstToggle = Descendants<CheckButton>(FindUniqueVisibleNamed<Control>(root, "ModsList"))
             .First(toggle => IsLiveAndVisible(toggle) && toggle.Name == "ModEnabledToggle" && scroll.GetGlobalRect().Encloses(toggle.GetGlobalRect()));
         var toggleStart = firstToggle.GetGlobalRect().GetCenter();
+        Expect(!firstToggle.Disabled, "The drag fixture needs an enabled toggle.");
         var wasEnabled = firstToggle.ButtonPressed;
         await Drag(toggleStart, toggleStart);
         Expect(firstToggle.ButtonPressed != wasEnabled, "A tap on a mod toggle inside the page must still toggle it: " + Geometry());
@@ -158,7 +163,7 @@ internal static class LauncherUiInteractionTest
             "Focusing an offscreen appended mod must reveal it: " + Geometry());
         GD.Print("MODS_SCROLL_FOCUS=" + Geometry());
 
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(6);
         Expect(scroll.ScrollVertical > 0, "Refreshing the same mod rows must not pin the viewport back to zero: " + Geometry());
         root.GetViewport().GuiReleaseFocus();
@@ -168,7 +173,7 @@ internal static class LauncherUiInteractionTest
         view.SelectDestination(LauncherDestination.Home);
         view.SetModsPresentation(OverflowPresentation(4));
         await Frames(3);
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(3);
         view.SelectDestination(LauncherDestination.Mods);
         await Frames(6);
@@ -224,8 +229,9 @@ internal static class LauncherUiInteractionTest
         static LauncherModsPresentation OverflowPresentation(int count)
         {
             var names = new[] { "ARAM: Mayhem", "BaseLib", "Import Vanilla Saves", "Quick Restart 2", "CookieCursor", "FixtureCrypto" };
-            var mods = names.Take(count).Select((name, index) => new LauncherModPresentationItem(
-                "scroll-fixture:" + index, "scroll-fixture-" + index, name,
+            // Keep growing past the named examples so every viewport has overflow.
+            var mods = Enumerable.Range(0, count).Select(index => new LauncherModPresentationItem(
+                "scroll-fixture:" + index, "scroll-fixture-" + index, names[index % names.Length] + " " + index,
                 index < 4 ? "Workshop" : "Manual", true, index < 4, true,
                 LauncherModLastLaunchState.NotTestedYet, false, "Scroll geometry fixture.")).ToArray();
             return new LauncherModsPresentation(LauncherModPlayMode.Modded, "scroll-fixture", LauncherModsPresentationState.PendingSaveNamespaceLabel,

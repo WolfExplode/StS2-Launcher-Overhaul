@@ -3,7 +3,7 @@ using Godot;
 
 namespace STS2Mobile.Launcher.Components;
 
-internal sealed class StyledPanel : CenterContainer
+internal sealed partial class StyledPanel : CenterContainer
 {
     private const int CompactPanelHorizontalMargin = 20;
     private const int CompactPanelTopMargin = 20;

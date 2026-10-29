@@ -3,6 +3,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <AssemblyName>STS2Mobile</AssemblyName>
     <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <!-- This library uses the host's Godot initialization entry point. -->
+    <GodotDisabledSourceGenerators>GodotPluginsInitializer</GodotDisabledSourceGenerators>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
@@ -19,6 +21,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Godot.SourceGenerators" Version="4.5.1" PrivateAssets="all" />
     <EmbeddedResource Include="../../android/assets/dotnet_bcl/harmony-runtime-build.json" LogicalName="STS2Mobile.HarmonyRuntimeBuild" />
     <EmbeddedResource Include="../../android/assets/dotnet_bcl/mono-runtime-build.json" LogicalName="STS2Mobile.MonoRuntimeBuild" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />

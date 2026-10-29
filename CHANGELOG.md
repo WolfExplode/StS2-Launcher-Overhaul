@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-29 - Run the launcher interaction checks against Godot
+
+- Added the matching Godot source generator to the launcher library, so Godot dispatches its C# lifecycle and layout overrides. Without it, the touch scroll container never subscribed to new controls, leaving buttons and panels blocking drags. Styled controls now have the partial declarations required by the generator; the library continues to use the host's initialization entry point.
+- The scroll fixture now actually overflows phone and tablet viewports. Its synthetic wheel input includes a release so it does not retain mouse focus and block subsequent taps.
+- Added `-UiOnly` to the preview test command for machines without the original ImportVanillaSaves mod fixture. The default full suite still requires that fixture.
+- Built the pinned Android Mono and Harmony runtimes from source. Phone and desktop UI interaction checks passed in Godot, including tablet scale cases, rotation, button locks and tap/drag scrolling. Full mod activation checks remain blocked by the missing fixture. Physical device validation is still pending.
+
 ## 2026-10-29 - Failure reporting, Workshop marker, theme overrides and manifest reading
 
 - Recording a Steam sign-in, connection or timeout failure no longer blocks the launcher while the sync status file is written. Before, it waited on the write on the main thread, including on any running sync that held the file. Callers now await the write, so it still completes before the next step.
