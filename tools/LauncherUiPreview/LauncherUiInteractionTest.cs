@@ -245,20 +245,24 @@ internal static class LauncherUiInteractionTest
         LauncherPreferences.SaveGameBranch("public");
         var model = new LauncherModel(AppPaths.AppPrivateDataDir);
         var diagnostics = new LauncherDiagnosticsCoordinator(model, view);
-        var launch = new LauncherLaunchCoordinator(model, view, diagnostics);
-        var versions = new LauncherVersionCoordinator(model, view);
+        var selectedBranch = LauncherPreferences.ReadGameBranch();
+        var launch = new LauncherLaunchCoordinator(model, view, diagnostics, () => selectedBranch);
+        var versions = new LauncherVersionCoordinator(model, view, () => selectedBranch);
         var downloads = new LauncherDownloadCoordinator(
             model,
             view,
             launch,
-            versions.RefreshGameBranchOptions
+            versions.RefreshGameBranchOptions,
+            () => selectedBranch
         );
         var branchSwitch = new LauncherBranchSwitchCoordinator(
             model,
             view,
             versions,
             launch,
-            downloads
+            downloads,
+            () => selectedBranch,
+            branch => selectedBranch = branch
         );
         WireEvents(view, events, branchSwitch.GameBranchChanged);
 

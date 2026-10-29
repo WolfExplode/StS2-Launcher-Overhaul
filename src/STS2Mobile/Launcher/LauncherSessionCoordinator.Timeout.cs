@@ -40,7 +40,7 @@ internal sealed partial class LauncherSessionCoordinator
         => _model.HasOwnershipMarker()
             ? LauncherLaunchReadiness.EvaluateDownloadedState(
                 _model.DataDir,
-                LauncherPreferences.ReadGameBranch(),
+                _selectedBranch(),
                 "connection timeout offline downloaded-state readiness"
             )
             : null;

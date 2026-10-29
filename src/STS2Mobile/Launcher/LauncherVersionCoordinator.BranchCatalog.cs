@@ -9,13 +9,17 @@ internal sealed partial class LauncherVersionCoordinator
 {
     private readonly LauncherModel _model;
     private readonly LauncherView _view;
+    private readonly Func<string> _selectedBranch;
     private bool _branchCatalogRefreshRunning;
 
-    internal LauncherVersionCoordinator(LauncherModel model, LauncherView view)
+    internal LauncherVersionCoordinator(LauncherModel model, LauncherView view, Func<string> selectedBranch)
     {
+        _selectedBranch = selectedBranch;
         _model = model;
         _view = view;
     }
+
+    internal string SelectedBranch => _selectedBranch();
 
     internal void RefreshGameBranchOptions()
     {
@@ -57,7 +61,7 @@ internal sealed partial class LauncherVersionCoordinator
     internal void CompleteBranchCatalogRefresh()
     {
         var branches = LauncherBranchCatalog.ReadVisibleBranches(_model.DataDir);
-        var preferences = LauncherPreferences.ReadActionPreferences();
+        var preferences = LauncherPreferences.ReadActionPreferences(_selectedBranch());
         _view.SetActionPreferences(
             preferences,
             LauncherBranchCatalog.ReadSelectableBranches(_model.DataDir, branches)

@@ -2,6 +2,7 @@ namespace STS2Mobile.Launcher;
 
 internal sealed partial class LauncherLaunchCoordinator
 {
+    private readonly System.Func<string> _selectedBranch;
     private readonly LauncherModel _model;
     private readonly LauncherView _view;
     private readonly LauncherDiagnosticsCoordinator _diagnostics;
@@ -13,9 +14,11 @@ internal sealed partial class LauncherLaunchCoordinator
     internal LauncherLaunchCoordinator(
         LauncherModel model,
         LauncherView view,
-        LauncherDiagnosticsCoordinator diagnostics
+        LauncherDiagnosticsCoordinator diagnostics,
+        System.Func<string> selectedBranch
     )
     {
+        _selectedBranch = selectedBranch;
         _model = model;
         _view = view;
         _diagnostics = diagnostics;

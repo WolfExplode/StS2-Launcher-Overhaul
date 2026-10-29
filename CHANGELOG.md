@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Keep the selected version in the controller
+
+- The controller reads the selected branch at startup and updates it after a confirmed switch. Version, download, launch, update-check and session coordinators now use that value, including stale-result checks and redownload targeting. Persisted preference formats are unchanged.
+- The full launcher preview suite passed. Diagnostic and lower-level startup services still read the saved selection independently.
+
 ## 2026-10-29 - Simplify the compact status headline
 
 - Removed the single-child grid around the status phase and kept its previous non-expanding vertical behavior. The full launcher preview suite passed; the revised status layout has not been visually checked on a device.

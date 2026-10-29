@@ -31,10 +31,10 @@ internal sealed partial class LauncherVersionCoordinator
         ).Apply(_view);
     }
 
-    private static bool IsCurrentSelection(string branch)
+    private bool IsCurrentSelection(string branch)
         => string.Equals(
             STS2Mobile.Steam.SteamGameBranch.Normalize(branch),
-            LauncherPreferences.ReadGameBranch(),
+            _selectedBranch(),
             System.StringComparison.OrdinalIgnoreCase
         );
 }

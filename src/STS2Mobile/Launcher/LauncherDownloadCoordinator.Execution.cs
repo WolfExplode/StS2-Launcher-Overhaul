@@ -9,7 +9,7 @@ internal sealed partial class LauncherDownloadCoordinator
 {
     internal bool TryStartAutomaticRepair(Action afterSuccess = null)
         => TryStartAutomaticRepair(
-            LauncherPreferences.ReadGameBranch(),
+            _selectedBranch(),
             afterSuccess
         );
 
@@ -49,7 +49,7 @@ internal sealed partial class LauncherDownloadCoordinator
     }
 
     internal bool TryShowRedownloadRequired()
-        => TryShowRedownloadRequired(LauncherPreferences.ReadGameBranch());
+        => TryShowRedownloadRequired(_selectedBranch());
 
     internal bool TryShowRedownloadRequired(string branch)
     {
@@ -100,7 +100,7 @@ internal sealed partial class LauncherDownloadCoordinator
 
     private async Task DownloadAsync()
         => await RunSelectedVersionOperationAsync(
-            LauncherPreferences.ReadGameBranch(),
+            _selectedBranch(),
             automaticRepairOnly: false
         );
 

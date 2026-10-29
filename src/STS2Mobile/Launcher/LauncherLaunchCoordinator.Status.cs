@@ -55,7 +55,7 @@ internal sealed partial class LauncherLaunchCoordinator
 
     internal LauncherLaunchReadiness RefreshSelectedRuntimeSlotEvidence()
     {
-        var branch = LauncherPreferences.ReadGameBranch();
+        var branch = _selectedBranch();
         return RefreshSelectedRuntimeSlotEvidence(branch);
     }
 
@@ -70,7 +70,7 @@ internal sealed partial class LauncherLaunchCoordinator
 
     internal LauncherLaunchReadiness RefreshSelectedDownloadedStateEvidence(string phase)
     {
-        var branch = LauncherPreferences.ReadGameBranch();
+        var branch = _selectedBranch();
         return RefreshSelectedDownloadedStateEvidence(branch, phase);
     }
 
@@ -88,7 +88,7 @@ internal sealed partial class LauncherLaunchCoordinator
 
     private string SelectedVersionDownloadRequiredStatus(LauncherLaunchReadiness readiness)
     {
-        var branch = readiness?.Branch ?? LauncherPreferences.ReadGameBranch();
+        var branch = readiness?.Branch ?? _selectedBranch();
         return $"Download {STS2Mobile.Steam.SteamGameBranch.DisplayName(branch)} to play.";
     }
 

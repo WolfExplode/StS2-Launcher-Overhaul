@@ -19,6 +19,7 @@ internal sealed partial class LauncherDownloadCoordinator
     private const string BlockedRedownloadConfirmationMessage =
         "Redownload selected version?\nOnly this version's downloaded files will be removed. Saves, your Steam login, and other versions stay in place. Steam does not currently allow a replacement download for this version.";
 
+    private readonly Func<string> _selectedBranch;
     private readonly LauncherModel _model;
     private readonly LauncherView _view;
     private readonly LauncherLaunchCoordinator _launch;
@@ -29,9 +30,11 @@ internal sealed partial class LauncherDownloadCoordinator
         LauncherModel model,
         LauncherView view,
         LauncherLaunchCoordinator launch,
-        Action refreshGameBranchOptions
+        Action refreshGameBranchOptions,
+        Func<string> selectedBranch
     )
     {
+        _selectedBranch = selectedBranch;
         _model = model;
         _view = view;
         _launch = launch;

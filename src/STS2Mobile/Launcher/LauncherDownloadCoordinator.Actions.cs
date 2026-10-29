@@ -10,7 +10,7 @@ internal sealed partial class LauncherDownloadCoordinator
 
     internal void DownloadPressed()
     {
-        var selectedBranch = LauncherPreferences.ReadGameBranch();
+        var selectedBranch = _selectedBranch();
         if (TryStartAutomaticRepair(selectedBranch))
             return;
 
@@ -61,14 +61,14 @@ internal sealed partial class LauncherDownloadCoordinator
 
     private void ApplyRedownload()
     {
-        _model.ResetGameFilesForRedownload();
+        _model.ResetGameFilesForRedownload(_selectedBranch());
         _refreshGameBranchOptions();
         DownloadViewUpdate.RedownloadApplied().Apply(_view, _launch);
     }
 
     private void ApplyRedownloadAndDownload()
     {
-        _model.ResetGameFilesForRedownload();
+        _model.ResetGameFilesForRedownload(_selectedBranch());
         _refreshGameBranchOptions();
         _view.SetStatus(
             "Selected branch files removed. Downloading a fresh copy from Steam...",
@@ -80,7 +80,7 @@ internal sealed partial class LauncherDownloadCoordinator
 
     private void ApplyRedownloadBlockedByBranchProblem(string downloadProblem)
     {
-        _model.ResetGameFilesForRedownload();
+        _model.ResetGameFilesForRedownload(_selectedBranch());
         _refreshGameBranchOptions();
         _view.SetStatus(downloadProblem, LauncherStatusSeverity.Warning);
         _view.AppendLog("Selected branch files removed, but Steam still blocks the replacement download. Saves and other branches were left in place.");
