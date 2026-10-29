@@ -88,7 +88,7 @@ internal sealed partial class ActionSection
             Name = "SelectedVersionRepairGroup",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         var title = new StyledLabel("Selected version redownload", _scale, fontSize: _compact ? LauncherSectionMetrics.CompactVersionSummaryFontSize : LauncherSectionMetrics.ProgressFontSize, align: HorizontalAlignment.Left);
         title.Name = "SelectedVersionRepairLabel";
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
@@ -105,7 +105,7 @@ internal sealed partial class ActionSection
             Name = "SelectedVersionRepairActions",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        actions.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        actions.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         MoveTo(actions, _redownloadButton);
         group.AddChild(actions);
         return group;
@@ -130,7 +130,7 @@ internal sealed partial class ActionSection
             Name = "HelpDiagnosticsGroup",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         var title = new StyledLabel("Diagnostics", _scale, fontSize: _compact ? LauncherSectionMetrics.CompactVersionSummaryFontSize : LauncherSectionMetrics.ProgressFontSize, align: HorizontalAlignment.Left)
         {
             Name = "HelpDiagnosticsLabel",
@@ -166,13 +166,13 @@ internal sealed partial class ActionSection
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             Visible = false,
         };
-        destination.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(_compact ? 10 : 12, _scale));
+        destination.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(_compact ? 10 : 12, _scale));
         var heading = new VBoxContainer
         {
             Name = $"{title}DestinationHeader",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        heading.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(4, _scale));
+        heading.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(4, _scale));
         var titleLabel = new StyledLabel(title == "Home" ? "Slay the Spire 2" : title, _scale, fontSize: _compact ? 28 : 34, align: HorizontalAlignment.Left);
         titleLabel.Name = $"{title}DestinationTitle";
         titleLabel.AddThemeColorOverride("font_color", LauncherComponentTheme.TextPrimary);
@@ -225,7 +225,7 @@ internal sealed partial class ActionSection
         {
             Name = "HomeShortcuts"
         };
-        group.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(10, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(10, _scale));
         var label = new StyledLabel("YOUR GAME", _scale, fontSize: 12, align: HorizontalAlignment.Left);
         label.AddThemeColorOverride("font_color", LauncherComponentTheme.TextSecondary);
         group.AddChild(new Control { CustomMinimumSize = new Vector2(0, 12 * _scale), MouseFilter = Control.MouseFilterEnum.Ignore });
@@ -254,7 +254,7 @@ internal sealed partial class ActionSection
         row.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         row.OffsetLeft = 16 * _scale;
         row.OffsetRight = -16 * _scale;
-        row.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(14, _scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(14, _scale));
         row.AddChild(new TextureRect { Texture = LauncherIcons.Create((int)destination, _scale), StretchMode = TextureRect.StretchModeEnum.KeepCentered, Modulate = LauncherComponentTheme.CyanAccent, MouseFilter = Control.MouseFilterEnum.Ignore, });
         var copy = new VBoxContainer
         {

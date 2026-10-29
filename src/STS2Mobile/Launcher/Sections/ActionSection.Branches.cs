@@ -69,7 +69,7 @@ internal sealed partial class ActionSection
             Name = "GameVersionSelection",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         var title = new StyledLabel("Game version", scale, fontSize: compact ? LauncherSectionMetrics.CompactVersionSummaryFontSize : LauncherSectionMetrics.ProgressFontSize, align: HorizontalAlignment.Left);
         title.Name = "GameVersionLabel";
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextPrimary);

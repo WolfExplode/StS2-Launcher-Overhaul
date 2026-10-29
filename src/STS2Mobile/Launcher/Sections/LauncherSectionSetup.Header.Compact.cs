@@ -33,10 +33,7 @@ internal static partial class LauncherSectionSetup
 
         var body = new HBoxContainer();
         body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(6, scale)
-        );
+        body.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         panel.AddChild(body);
 
         body.AddChild(BuildCompactSectionAccent(accent, scale));

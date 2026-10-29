@@ -24,7 +24,7 @@ internal sealed partial class LauncherView
         var content = new VBoxContainer();
         content.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        content.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactRootColumnSeparation : LauncherViewLayoutMetrics.RootColumnSeparation, profile.Scale));
+        content.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactRootColumnSeparation : LauncherViewLayoutMetrics.RootColumnSeparation, profile.Scale));
         panel.AddContent(content);
         content.AddChild(BuildBrandHeader(profile));
         var androidCompositionRefresh = new ColorRect
@@ -46,7 +46,7 @@ internal sealed partial class LauncherView
             Visible = false,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        drawer.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, scale));
+        drawer.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         var toggle = new StyledButton(profile.Compact ? "" : DiagnosticsToggleText(visible: false), scale, fontSize: profile.Compact ? LauncherSectionMetrics.CompactDetailButtonFontSize : 14, height: profile.Compact ? LauncherSectionMetrics.CompactDrawerToggleHeight : 48);
         toggle.Name = "TechnicalDetailsToggle";
         LauncherButtonStyles.ApplySupportAction(toggle, scale);
@@ -118,7 +118,7 @@ internal sealed partial class LauncherView
             Columns = 5,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        navigation.AddThemeConstantOverride("h_separation", LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? 3 : 6, profile.Scale));
+        navigation.SetColumnSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? 3 : 6, profile.Scale));
         frame.AddChild(navigation);
         string[] labels = ["Home", "Saves", "Versions", "Mods", "Help"];
         var buttons = new Button[labels.Length];
@@ -184,7 +184,7 @@ internal sealed partial class LauncherView
         var left = new VBoxContainer();
         left.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         left.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
-        left.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
+        left.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
         leftFrame.AddChild(left);
         return new LauncherViewPrimaryBody(leftScroll, left);
     }
@@ -203,7 +203,7 @@ internal sealed partial class LauncherView
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        homeSections.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
+        homeSections.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
         left.AddChild(homeSections);
         homeSections.AddChild(firstRunGuide);
         var login = new LoginSection(scale, profile.Compact);

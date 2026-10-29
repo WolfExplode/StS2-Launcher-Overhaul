@@ -255,7 +255,7 @@ internal sealed partial class ActionSection : VBoxContainer
     {
         var group = new VBoxContainer();
         group.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.SectionSeparation, scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.SectionSeparation, scale));
         return group;
     }
 

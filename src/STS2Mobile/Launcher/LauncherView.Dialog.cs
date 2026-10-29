@@ -49,7 +49,7 @@ internal sealed partial class LauncherView
     {
         var vbox = new VBoxContainer();
         vbox.MouseFilter = Control.MouseFilterEnum.Pass;
-        vbox.AddThemeConstantOverride(LauncherComponentTheme.ThemeSeparation, LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogContentSeparation));
+        vbox.SetSeparation(LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogContentSeparation));
         return vbox;
     }
 
@@ -77,7 +77,7 @@ internal sealed partial class LauncherView
         BoxContainer buttonRow = profile.Compact ? new VBoxContainer() : new HBoxContainer();
         buttonRow.Name = "ConfirmationActions";
         buttonRow.MouseFilter = Control.MouseFilterEnum.Pass;
-        buttonRow.AddThemeConstantOverride(LauncherComponentTheme.ThemeSeparation, LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogButtonSeparation));
+        buttonRow.SetSeparation(LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogButtonSeparation));
         buttonRow.Alignment = profile.Compact ? BoxContainer.AlignmentMode.Begin : BoxContainer.AlignmentMode.Center;
         var dismissed = false;
         void Dismiss(Action callback)

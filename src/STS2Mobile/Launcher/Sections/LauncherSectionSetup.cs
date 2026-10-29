@@ -15,15 +15,10 @@ internal static partial class LauncherSectionSetup
         string compactCue = null
     )
     {
-        section.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(
-                compact
-                    ? LauncherSectionMetrics.CompactSectionSeparation
-                    : LauncherSectionMetrics.SectionSeparation,
-                scale
-            )
-        );
+        section.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(
+            compact ? LauncherSectionMetrics.CompactSectionSeparation : LauncherSectionMetrics.SectionSeparation,
+            scale
+        ));
         section.Visible = false;
         var header = BuildSectionHeader(title, subtitle, scale, accent, compact, compactCue);
         section.AddChild(header);

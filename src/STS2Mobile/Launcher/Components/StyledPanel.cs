@@ -28,7 +28,7 @@ internal sealed class StyledPanel : CenterContainer
 
         Content = new VBoxContainer();
         Content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        Content.AddThemeConstantOverride("separation", (int)(10 * scale));
+        Content.SetSeparation((int)(10 * scale));
         panelContainer.AddChild(Content);
 
         // Defer viewport-based sizing until in tree

@@ -1,9 +1,10 @@
 # Changelog
 
-## 2026-10-29 - Failure reporting and Workshop marker
+## 2026-10-29 - Failure reporting, Workshop marker and theme overrides
 
 - Recording a Steam sign-in, connection or timeout failure no longer blocks the launcher while the sync status file is written. Before, it waited on the write on the main thread, including on any running sync that held the file. Callers now await the write, so it still completes before the next step.
 - Removed the Workshop consent marker file. It was written on Workshop update and deleted on removal, but nothing read it; the confirmation shown before each Workshop update is the consent. An existing `workshop_mods_accepted.txt` is left in place and is harmless.
+- Container spacing and margins are set through typed helpers (`LauncherThemeOverrides`) that only accept the container types that read them, so spacing set on the wrong kind of container no longer compiles. Converting all 44 spacing settings found no other case of this. Three copies of the `"separation"` constant are removed.
 - Checked by compiling against stubbed game types; not run.
 
 ## 2026-10-29 - Launch locks

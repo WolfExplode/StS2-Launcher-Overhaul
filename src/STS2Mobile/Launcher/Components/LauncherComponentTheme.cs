@@ -43,7 +43,6 @@ internal static class LauncherComponentTheme
     internal const string StateHover = "hover";
     internal const string StateNormal = "normal";
     internal const string StatePressed = "pressed";
-    internal const string ThemeSeparation = "separation";
 
     internal static readonly Color ButtonDisabled = new("#20252F");
     internal static readonly Color ButtonHover = new("#303B4D");

@@ -177,12 +177,8 @@ internal sealed partial class ActionSection
             Columns = 2,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        rows.AddThemeConstantOverride(
-            "h_separation",
-            LauncherViewLayoutMetrics.ScaleInt(12, scale)
-        );
-        rows.AddThemeConstantOverride(
-            "v_separation",
+        rows.SetSeparation(
+            LauncherViewLayoutMetrics.ScaleInt(12, scale),
             LauncherViewLayoutMetrics.ScaleInt(8, scale)
         );
         return rows;

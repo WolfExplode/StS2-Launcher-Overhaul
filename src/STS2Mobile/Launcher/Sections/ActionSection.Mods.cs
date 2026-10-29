@@ -139,22 +139,19 @@ internal sealed partial class ActionSection
             };
             var horizontalMargin = LauncherViewLayoutMetrics.ScaleInt(10, _scale);
             var verticalMargin = LauncherViewLayoutMetrics.ScaleInt(7, _scale);
-            margin.AddThemeConstantOverride("margin_left", horizontalMargin);
-            margin.AddThemeConstantOverride("margin_right", horizontalMargin);
-            margin.AddThemeConstantOverride("margin_top", verticalMargin);
-            margin.AddThemeConstantOverride("margin_bottom", verticalMargin);
+            margin.SetMargins(horizontalMargin, verticalMargin, horizontalMargin, verticalMargin);
             panel.AddChild(margin);
             var content = new VBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             };
-            content.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(3, _scale));
+            content.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(3, _scale));
             margin.AddChild(content);
             var header = new HBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             };
-            header.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(8, _scale));
+            header.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(8, _scale));
             content.AddChild(header);
             var title = new StyledLabel("", _scale, fontSize: _compact ? 14 : 15, align: HorizontalAlignment.Left)
             {
@@ -271,7 +268,7 @@ internal sealed partial class ActionSection
             Name = "ModsList",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        modsList.AddThemeConstantOverride("separation", Math.Max(3, (int)(4 * scale)));
+        modsList.SetSeparation(Math.Max(3, (int)(4 * scale)));
         group.AddChild(modsList);
         Container actionsParent = compact ? BuildCompactActionRow(group, scale) : group;
         var workshopSyncButton = AddActionButton(actionsParent, "Update Workshop mods", scale, () => WorkshopSyncPressed?.Invoke());

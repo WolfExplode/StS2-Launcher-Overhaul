@@ -100,7 +100,7 @@ internal sealed partial class LauncherView
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
         };
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(8, scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(8, scale));
         panel.AddChild(row);
         var accent = new ColorRect
         {
@@ -133,7 +133,7 @@ internal sealed partial class LauncherView
         panel.AddThemeStyleboxOverride(LauncherComponentTheme.Panel, BuildStatusStyle(scale, compact: true));
         var body = new VBoxContainer();
         body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactStatusBodySeparation, scale));
+        body.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(CompactStatusBodySeparation, scale));
         panel.AddChild(body);
         statusAccent.CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(CompactStatusAccentHeight, scale));
         body.AddChild(statusAccent);
@@ -179,7 +179,7 @@ internal sealed partial class LauncherView
         panel.AddThemeStyleboxOverride(LauncherComponentTheme.Panel, BuildStatusStyle(scale, compact: false));
         var body = new HBoxContainer();
         body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(8, scale));
+        body.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(8, scale));
         panel.AddChild(body);
         statusAccent.CustomMinimumSize = new Vector2(LauncherViewLayoutMetrics.ScaleInt(4, scale), LauncherViewLayoutMetrics.ScaleInt(30, scale));
         body.AddChild(statusAccent);
@@ -188,7 +188,7 @@ internal sealed partial class LauncherView
         phasePanel.AddThemeStyleboxOverride(LauncherComponentTheme.Panel, BuildStatusPhaseStyle(scale, compact: false));
         var phaseBody = new VBoxContainer();
         phaseBody.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        phaseBody.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(1, scale));
+        phaseBody.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(1, scale));
         statusPhaseLabel.VerticalAlignment = VerticalAlignment.Center;
         phaseBody.AddChild(statusPhaseLabel);
         phasePanel.AddChild(phaseBody);
