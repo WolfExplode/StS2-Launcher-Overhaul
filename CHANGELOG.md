@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Apply Android display changes only when needed
+
+- The launcher now compares keyboard height, viewport and window size, safe area and focus before updating insets or keyboard layout. Unchanged frames no longer rewrite the panel shift. A resize still recalculates layout, and changing focus while the keyboard is open can reveal the new field.
+- The full launcher preview suite passed, including the original ImportVanillaSaves fixture. On the Galaxy S23, dev.9 retained full-width layout when rotated between portrait and landscape. Rotation with the keyboard open and the composition-refresh workaround still need a device check.
+
 ## 2026-10-29 - Run the launcher interaction checks against Godot
 
 - Added the matching Godot source generator to the launcher library, so Godot dispatches its C# lifecycle and layout overrides. Without it, the touch scroll container never subscribed to new controls, leaving buttons and panels blocking drags. Styled controls now have the partial declarations required by the generator; the library continues to use the host's initialization entry point.

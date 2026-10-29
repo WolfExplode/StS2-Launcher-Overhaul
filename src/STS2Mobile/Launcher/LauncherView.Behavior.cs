@@ -4,11 +4,40 @@ using System;
 namespace STS2Mobile.Launcher;
 internal sealed partial class LauncherView
 {
+    private AndroidDisplayState? _androidDisplayState;
+    private readonly record struct AndroidDisplayState(int KeyboardHeight, Vector2I WindowSize, Vector2 ViewportSize, Rect2I SafeArea, ulong FocusId);
+
+    // Godot exposes keyboard height and safe area through queries. Observe those
+    // values each frame, but only enter layout code when a value changes.
+    internal void PollAndroidDisplayChanges()
+    {
+        if (!OperatingSystem.IsAndroid())
+            return;
+        var focus = _parent.GetViewport()?.GuiGetFocusOwner();
+        var state = new AndroidDisplayState(DisplayServer.VirtualKeyboardGetHeight(),
+            DisplayServer.WindowGetSize(), _parent.GetViewport()?.GetVisibleRect().Size ?? _profile.ViewportSize,
+            DisplayServer.GetDisplaySafeArea(), focus?.GetInstanceId() ?? 0);
+        if (_androidDisplayState == state)
+            return;
+        var previous = _androidDisplayState;
+        _androidDisplayState = state;
+        if (!previous.HasValue || previous.Value.SafeArea != state.SafeArea || previous.Value.ViewportSize != state.ViewportSize)
+            UpdateSystemInsets();
+        if (!previous.HasValue || previous.Value.KeyboardHeight != state.KeyboardHeight
+            || previous.Value.WindowSize != state.WindowSize || previous.Value.ViewportSize != state.ViewportSize)
+            UpdateKeyboardOffset(state.KeyboardHeight);
+        else if (state.KeyboardHeight > 0 && previous.Value.FocusId != state.FocusId)
+            ScrollFocusedInputAboveKeyboard();
+    }
+
     internal void UpdateViewportSize(Vector2 viewportSize)
     {
         _panel.UpdateSizeFromViewport(viewportSize, _profile.PanelHeightRatio);
         UpdateDiagnosticsLogViewport(viewportSize);
-        UpdateKeyboardOffset();
+        if (OperatingSystem.IsAndroid())
+            PollAndroidDisplayChanges();
+        else
+            UpdateKeyboardOffset();
         RequestAndroidCompositionRefresh();
     }
 
@@ -32,8 +61,10 @@ internal sealed partial class LauncherView
     }
 
     internal void UpdateKeyboardOffset()
+        => UpdateKeyboardOffset(OperatingSystem.IsAndroid() ? DisplayServer.VirtualKeyboardGetHeight() : 0);
+
+    private void UpdateKeyboardOffset(int kbHeight)
     {
-        var kbHeight = DisplayServer.VirtualKeyboardGetHeight();
         if (kbHeight > 0)
         {
             var windowSize = DisplayServer.WindowGetSize();
