@@ -74,10 +74,18 @@ internal sealed partial class LauncherView
         }).CallDeferred();
     }
 
+    // Presses anywhere in the panel bubble here, including those on its
+    // controls. The viewport focuses a focusable control before delivering
+    // its press, so a press inside the focus owner was meant for it: releasing
+    // focus then would close the keyboard under a text field, or cancel a
+    // button's press.
     private void DismissKeyboard(InputEvent ev)
     {
         if (ev is InputEventMouseButton { Pressed: true } or InputEventScreenTouch { Pressed: true })
         {
+            var focusOwner = _parent.GetViewport()?.GuiGetFocusOwner();
+            if (focusOwner != null && focusOwner.GetGlobalRect().HasPoint(focusOwner.GetGlobalMousePosition()))
+                return;
             _parent.GetViewport()?.GuiReleaseFocus();
             if (OperatingSystem.IsAndroid())
             {

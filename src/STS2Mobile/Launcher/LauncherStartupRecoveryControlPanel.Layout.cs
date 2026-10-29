@@ -13,9 +13,9 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
             Layer = CanvasLayerIndex,
         };
 
-    private static ScrollContainer CreateScrollContainer()
+    private static ScrollContainer CreateScrollContainer(float scale)
     {
-        var scroll = new ScrollContainer
+        var scroll = new TouchScrollContainer(scale)
         {
             FollowFocus = true,
         };

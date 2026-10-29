@@ -37,7 +37,7 @@ internal sealed partial class LauncherView
         return (panel, content, androidCompositionRefresh);
     }
 
-    private static (RichTextLabel Log, VBoxContainer Drawer, Button Toggle) BuildLogColumn(LauncherLayoutProfile profile, VBoxContainer root, Action<InputEvent> dismissKeyboard)
+    private static (RichTextLabel Log, VBoxContainer Drawer, Button Toggle) BuildLogColumn(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
         var drawer = new VBoxContainer
@@ -63,7 +63,6 @@ internal sealed partial class LauncherView
         drawer.AddChild(title);
         var log = BuildLogView(profile);
         log.CustomMinimumSize = new Vector2(0, DiagnosticsLogHeight(profile));
-        log.GuiInput += input => dismissKeyboard(input);
         drawer.AddChild(log);
         root.AddChild(drawer);
         return (log, drawer, toggle);
@@ -169,7 +168,7 @@ internal sealed partial class LauncherView
     private static LauncherViewPrimaryBody BuildPrimaryColumnBody(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
-        var leftScroll = new ScrollContainer
+        var leftScroll = new TouchScrollContainer(scale)
         {
             Name = "LauncherPrimaryScroll",
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,

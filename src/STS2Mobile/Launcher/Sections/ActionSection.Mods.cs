@@ -130,8 +130,6 @@ internal sealed partial class ActionSection
             var panel = new PanelContainer
             {
                 Name = "ModRow",
-                // Let touch drags reach the enclosing ScrollContainer.
-                MouseFilter = Control.MouseFilterEnum.Pass,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 Visible = false,
             };

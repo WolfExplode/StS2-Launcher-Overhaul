@@ -119,9 +119,8 @@ internal sealed partial class LauncherView
         var label = BuildDialogMessage(message, profile);
         if (!profile.Compact || !ShouldScrollDialogMessage(message))
             return label;
-        var scroll = new ScrollContainer
+        var scroll = new TouchScrollContainer(profile.Scale)
         {
-            MouseFilter = Control.MouseFilterEnum.Pass,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             CustomMinimumSize = new Vector2(DialogMessageWidth(profile), DialogMessageScrollHeight(message, profile)),
         };

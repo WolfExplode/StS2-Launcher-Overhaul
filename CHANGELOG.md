@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 - Launcher touch scrolling
+
+- A finger drag now scrolls launcher pages, dialogs and the startup recovery panel from anywhere, including on buttons, toggles, panels and the diagnostics log. Before, panels and buttons stopped the drag from reaching the scroll area, so only gaps between them scrolled. Starting a drag on a button no longer presses it. Text fields keep their own text-selection drag.
+- The scrollbar is styled and scaled for the screen density instead of the few-pixel default.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers tap and drag on a mod toggle, but was not run.
+
 ## 2026-10-29 - Repository maintenance
 
 - Documentation now describes the current release only. Dated investigations, plans, audits, duplicate architecture pages and earlier release notes are removed; Git history and the GitHub releases keep them. The pending 20-launch stability procedure moved into the validation runbook.

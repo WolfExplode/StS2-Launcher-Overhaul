@@ -72,7 +72,7 @@ internal sealed partial class LauncherView
         Download = primary.Download;
         Actions = primary.Actions;
         Actions.HomeDestinationPressed += SelectDestination;
-        var diagnostics = BuildLogColumn(profile, Actions.HelpDiagnosticsHost, dismissKeyboard);
+        var diagnostics = BuildLogColumn(profile, Actions.HelpDiagnosticsHost);
         Log = diagnostics.Log;
         DiagnosticsDrawer = diagnostics.Drawer;
         DiagnosticsToggle = diagnostics.Toggle;

@@ -126,6 +126,30 @@ internal static class LauncherUiInteractionTest
         await Frames(4);
         Expect(scroll.ScrollVertical > 0, "Wheel input must scroll the grown mod list: " + Geometry());
 
+        var stopped = Descendants<Control>(scroll)
+            .Where(control => control.MouseFilter == Control.MouseFilterEnum.Stop && control is not (ScrollBar or LineEdit or TextEdit))
+            .Select(control => control.Name.ToString())
+            .ToArray();
+        Expect(stopped.Length == 0, "Controls inside the page must pass touch drags to it: " + string.Join(", ", stopped));
+
+        scroll.ScrollVertical = 0;
+        await Frames(3);
+        var firstToggle = Descendants<CheckButton>(FindUniqueVisibleNamed<Control>(root, "ModsList"))
+            .First(toggle => IsLiveAndVisible(toggle) && toggle.Name == "ModEnabledToggle" && scroll.GetGlobalRect().Encloses(toggle.GetGlobalRect()));
+        var toggleStart = firstToggle.GetGlobalRect().GetCenter();
+        var wasEnabled = firstToggle.ButtonPressed;
+        await Drag(toggleStart, toggleStart);
+        Expect(firstToggle.ButtonPressed != wasEnabled, "A tap on a mod toggle inside the page must still toggle it: " + Geometry());
+        await Drag(toggleStart, toggleStart);
+        Expect(firstToggle.ButtonPressed == wasEnabled, "A second tap must restore the mod toggle: " + Geometry());
+        root.GetViewport().GuiReleaseFocus();
+        scroll.ScrollVertical = 0;
+        await Frames(3);
+        await Drag(toggleStart, toggleStart - new Vector2(0, firstToggle.Size.Y * 2));
+        Expect(scroll.ScrollVertical > 0, "A finger drag that starts on a mod toggle must scroll the page: " + Geometry());
+        Expect(firstToggle.ButtonPressed == wasEnabled, "Drag-scrolling must not toggle the mod it started on: " + Geometry());
+        root.GetViewport().GuiReleaseFocus();
+
         scroll.ScrollVertical = 0;
         await Frames(3);
         lastToggle.GrabFocus();
@@ -164,6 +188,31 @@ internal static class LauncherUiInteractionTest
         {
             for (var frame = 0; frame < count; frame++)
                 await root.ToSignal(root.GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+        // The preview project emulates touch from the mouse, as Android does.
+        async Task Drag(Vector2 from, Vector2 to)
+        {
+            var viewport = root.GetViewport();
+            viewport.PushInput(new InputEventMouseButton
+            {
+                Position = from, GlobalPosition = from, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true,
+            }, true);
+            await Frames(1);
+            const int steps = 8;
+            for (var step = 1; step <= steps; step++)
+            {
+                var position = from.Lerp(to, step / (float)steps);
+                viewport.PushInput(new InputEventMouseMotion
+                {
+                    Position = position, GlobalPosition = position, Relative = (to - from) / steps, ButtonMask = MouseButtonMask.Left,
+                }, true);
+                await Frames(1);
+            }
+            viewport.PushInput(new InputEventMouseButton
+            {
+                Position = to, GlobalPosition = to, ButtonIndex = MouseButton.Left, Pressed = false,
+            }, true);
+            await Frames(3);
         }
         string Geometry()
         {
