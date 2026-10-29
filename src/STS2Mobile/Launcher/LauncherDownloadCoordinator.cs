@@ -25,6 +25,26 @@ internal sealed partial class LauncherDownloadCoordinator
     private readonly LauncherLaunchCoordinator _launch;
     private readonly Action _refreshGameBranchOptions;
     private Action _automaticRepairContinuation;
+    private LauncherDownloadPresentation _presentation = new(LauncherDownloadPhase.Idle, DownloadGameFilesButtonText, 0, "", false);
+
+    private void Present(LauncherDownloadPresentation presentation, bool showDownloadStage = false)
+    {
+        _presentation = presentation;
+        _view.SetDownloadPresentation(presentation, showDownloadStage);
+    }
+
+    internal void SetOperationRunning(bool running)
+    {
+        _view.SetSelectedVersionOperationRunning(running);
+        Present(_presentation with { Running = running });
+    }
+
+    private void PresentAction(string text)
+        => Present(_presentation with { Phase = LauncherDownloadPhase.Idle, ButtonText = text, Percentage = 0, ProgressText = "" }, showDownloadStage: true);
+
+    private void PresentProgress(double percentage, string text, bool showDownloadStage = false)
+        => Present(_presentation with { Phase = LauncherDownloadPhase.Progress, Percentage = percentage, ProgressText = text }, showDownloadStage);
+
 
     internal LauncherDownloadCoordinator(
         LauncherModel model,

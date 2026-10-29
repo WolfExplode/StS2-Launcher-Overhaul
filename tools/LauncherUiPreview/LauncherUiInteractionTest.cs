@@ -423,7 +423,8 @@ internal static class LauncherUiInteractionTest
         Expect(events.CopyRawLog == 1, "Copy launcher log did not route exactly once.");
         Expect(events.ModsSelectionChanged == 5, "Mode selectors or the importer toggle did not persist each change.");
 
-        DownloadViewUpdate.AutomaticRepairStarted().Apply(view, launch);
+        downloads.SetOperationRunning(true);
+        downloads.ShowAutomaticRepairPresentation();
         AssertVisibleLabelText(
             root,
             "GlobalStatusMessage",
@@ -447,6 +448,16 @@ internal static class LauncherUiInteractionTest
                 && VisibleNamedCount<Control>(root, "ConfirmationActions") == 0,
             "Automatic repair invoked or displayed the destructive redownload route."
         );
+        downloads.UpdateDownloadProgress(STS2Mobile.Steam.DepotDownloader.DownloadProgress.Status("Preparing files"));
+        Expect(FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled,
+            "Progress must not unlock the download while the operation is running.");
+        downloads.CancelDownload("public");
+        Expect(FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled,
+            "Cancellation must not unlock the download before the running event ends.");
+        downloads.SetOperationRunning(false);
+        Expect(!FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled
+            && !Descendants<ProgressBar>(root).Any(IsLiveAndVisible),
+            "A completed cancellation must restore the download action and hide progress.");
     }
 
     private static void AssertHelpJourney(
@@ -700,6 +711,7 @@ internal static class LauncherUiInteractionTest
 
         Press(root, "Check for updates");
         Press(root, "Refresh list");
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.UpdateAvailable);
         UpdateCheckViewUpdate.Completed(hasUpdate: true, "Public").Apply(view);
         AssertPrimaryHierarchy(
             root,
@@ -713,6 +725,7 @@ internal static class LauncherUiInteractionTest
         _ = FindVisibleButton(root, "Update selected Steam branch");
         _ = FindUniqueVisibleNamed<Control>(root, "VersionsDestination");
         Press(root, "Update selected Steam branch");
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.UpToDate);
         UpdateCheckViewUpdate.Completed(hasUpdate: false, "Public").Apply(view);
         _ = FindVisibleButton(root, "Check for updates");
         AssertVisibleLabelText(

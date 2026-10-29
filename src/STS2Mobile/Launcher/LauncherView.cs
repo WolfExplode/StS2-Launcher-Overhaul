@@ -254,6 +254,16 @@ internal sealed partial class LauncherView
         Login.ClearPassword();
     }
 
+    internal void SetDownloadPresentation(LauncherDownloadPresentation presentation, bool showDownloadStage = false)
+    {
+        if (showDownloadStage)
+            ShowHomeStage(HomeStage.Download);
+        Download.Reset(presentation.ButtonText);
+        if (presentation.Phase == LauncherDownloadPhase.Progress)
+            Download.SetProgress(presentation.Percentage, presentation.ProgressText);
+        Download.SetButtonDisabled(presentation.Running);
+    }
+
     internal void ShowDownloadProgress(string text)
     {
         if (_homeStage != HomeStage.Download)

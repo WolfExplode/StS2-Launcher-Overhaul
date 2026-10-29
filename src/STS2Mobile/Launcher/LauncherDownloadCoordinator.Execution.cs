@@ -28,7 +28,7 @@ internal sealed partial class LauncherDownloadCoordinator
             automaticRepair: () =>
             {
                 started = true;
-                DownloadViewUpdate.AutomaticRepairStarted().Apply(_view, _launch);
+                ShowAutomaticRepairPresentation();
                 if (_automaticRepairContinuation != null
                     && _model.SelectedVersionOperationIsRunning)
                 {
@@ -46,6 +46,12 @@ internal sealed partial class LauncherDownloadCoordinator
             redownloadRequired: () => { }
         );
         return started;
+    }
+
+    internal void ShowAutomaticRepairPresentation()
+    {
+        PresentProgress(0, LocalPckRepairOperation.ProgressMessage, showDownloadStage: true);
+        DownloadViewUpdate.AutomaticRepairStarted().Apply(_view);
     }
 
     internal bool TryShowRedownloadRequired()
@@ -128,7 +134,7 @@ internal sealed partial class LauncherDownloadCoordinator
             }
             else
             {
-                _view.ShowDownloadProgress("Connecting to Steam...");
+                PresentProgress(0, "Connecting to Steam...", showDownloadStage: true);
                 await _model.StartDownloadAsync(branch);
             }
         }
@@ -150,12 +156,13 @@ internal sealed partial class LauncherDownloadCoordinator
     }
 
     internal void UpdateDownloadProgress(DepotDownloader.DownloadProgress progress)
-        => progress.ApplyTo(_view.SetDownloadProgress, _view.AppendLog);
+        => progress.ApplyTo((percentage, text) => PresentProgress(percentage, text), _view.AppendLog);
 
     internal void CompleteDownload(BranchInstallCompletion completion)
     {
         if (completion == null)
             throw new ArgumentNullException(nameof(completion));
+        Present(_presentation with { Phase = LauncherDownloadPhase.Completed, Percentage = 0, ProgressText = "" });
         var automaticRepairContinuation = _automaticRepairContinuation;
         _automaticRepairContinuation = null;
         var branch = completion.Branch;
@@ -180,7 +187,8 @@ internal sealed partial class LauncherDownloadCoordinator
                 filesReady: false,
                 problem,
                 STS2Mobile.Steam.SteamGameBranch.DisplayName(branch)
-            ).Apply(_view, _launch);
+            ).Apply(_view);
+            _view.ShowRetry();
             return;
         }
         var readinessProblem = readiness.Ready
@@ -190,7 +198,11 @@ internal sealed partial class LauncherDownloadCoordinator
             readiness.Ready,
             readinessProblem,
             STS2Mobile.Steam.SteamGameBranch.DisplayName(branch)
-        ).Apply(_view, _launch);
+        ).Apply(_view);
+        if (readiness.Ready)
+            _launch.ShowLaunchActions(LaunchUpdateAction.Hidden);
+        else
+            _view.ShowRetry();
         if (!readiness.Ready && !string.IsNullOrWhiteSpace(readiness.ReadinessProblem))
             _view.AppendLog($"Preparation diagnostics: {readiness.ReadinessProblem}");
         var integritySummary = LauncherGameFiles.BranchIntegritySummary(_model.DataDir, branch);
@@ -216,25 +228,27 @@ internal sealed partial class LauncherDownloadCoordinator
     {
         _automaticRepairContinuation = null;
         var branch = failure.Branch;
-        var message = failure.Message;
+        var message = LauncherBranchAvailabilityStatus.CompactFailureMessage(_model.DataDir, failure.Message);
+        Present(_presentation with { Phase = LauncherDownloadPhase.Failed, ButtonText = string.IsNullOrEmpty(message) ? DownloadGameFilesButtonText : RetryDownloadButtonText, Percentage = 0, ProgressText = "" });
         LauncherLaunchMarkers.RecordPhase("game download failed", message);
         _refreshGameBranchOptions();
         DownloadViewUpdate.Failed(
-            LauncherBranchAvailabilityStatus.CompactFailureMessage(_model.DataDir, message),
+            message,
             STS2Mobile.Steam.SteamGameBranch.DisplayName(branch)
-        ).Apply(_view, _launch);
+        ).Apply(_view);
     }
 
     internal void CancelDownload(string branch)
     {
         _automaticRepairContinuation = null;
+        Present(_presentation with { Phase = LauncherDownloadPhase.Idle, ButtonText = DownloadGameFilesButtonText, Percentage = 0, ProgressText = "" });
         LauncherLaunchMarkers.RecordPhase("game download cancelled", $"branch={branch}");
-        DownloadViewUpdate.Cancelled().Apply(_view, _launch);
+        DownloadViewUpdate.Cancelled().Apply(_view);
     }
 
     internal void ShowDownloadReadyAction()
-        => DownloadViewUpdate.Ready().Apply(_view, _launch);
+        => PresentAction(DownloadGameFilesButtonText);
 
     internal void ShowRedownloadSelectedVersionAction()
-        => DownloadViewUpdate.Ready(RedownloadSelectedVersionButtonText).Apply(_view, _launch);
+        => PresentAction(RedownloadSelectedVersionButtonText);
 }

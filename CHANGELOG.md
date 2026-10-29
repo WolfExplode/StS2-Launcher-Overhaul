@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Draw download controls from one state
+
+- The download coordinator now owns the phase, action text and progress presentation. One view method draws the controls, and the selected-version operation event controls whether the download action is disabled. Completion, failure and cancellation clear stale progress. Update and download result bundles now carry status and log messages only.
+- The full launcher preview suite passed, including a coordinator-level running, progress and cancellation sequence. The ImportVanillaSaves desktop fixture still reports resource leaks on exit.
+
 ## 2026-10-29 - Keep the selected version in the controller
 
 - The controller reads the selected branch at startup and updates it after a confirmed switch. Version, download, launch, update-check and session coordinators now use that value, including stale-result checks and redownload targeting. Persisted preference formats are unchanged.

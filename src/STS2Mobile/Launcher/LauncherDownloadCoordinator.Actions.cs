@@ -4,7 +4,7 @@ internal sealed partial class LauncherDownloadCoordinator
 {
     internal void UpdateSelectedVersionPressed()
     {
-        _view.ShowDownloadAction("Update selected Steam branch");
+        PresentAction("Update selected Steam branch");
         DownloadPressed();
     }
 
@@ -63,7 +63,8 @@ internal sealed partial class LauncherDownloadCoordinator
     {
         _model.ResetGameFilesForRedownload(_selectedBranch());
         _refreshGameBranchOptions();
-        DownloadViewUpdate.RedownloadApplied().Apply(_view, _launch);
+        PresentAction(DownloadGameFilesButtonText);
+        DownloadViewUpdate.RedownloadApplied().Apply(_view);
     }
 
     private void ApplyRedownloadAndDownload()

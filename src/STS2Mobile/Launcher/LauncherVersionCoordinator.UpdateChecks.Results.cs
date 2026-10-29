@@ -14,6 +14,7 @@ internal sealed partial class LauncherVersionCoordinator
             );
             return;
         }
+        _view.SetVersionCheckOutcome(result.HasUpdate ? LauncherVersionCheckOutcome.UpdateAvailable : LauncherVersionCheckOutcome.UpToDate);
         UpdateCheckViewUpdate.Completed(
             result.HasUpdate,
             STS2Mobile.Steam.SteamGameBranch.DisplayName(result.Branch)
@@ -25,6 +26,7 @@ internal sealed partial class LauncherVersionCoordinator
         RefreshGameBranchOptions();
         if (!IsCurrentSelection(failure.Branch))
             return;
+        _view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
         UpdateCheckViewUpdate.Failed(
             LauncherBranchAvailabilityStatus.CompactFailureMessage(_model.DataDir, failure.Message),
             STS2Mobile.Steam.SteamGameBranch.DisplayName(failure.Branch)
