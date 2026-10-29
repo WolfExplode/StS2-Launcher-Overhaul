@@ -50,7 +50,6 @@ internal sealed class LauncherWorkshopCoordinator
         try
         {
             LauncherLaunchMarkers.RecordPhase("workshop sync requested");
-            WorkshopModConsent.Accept("launcher-workshop-sync");
             _view.SetWorkshopButtonsDisabled(true);
             _view.SetStatus("Updating Workshop mods...", LauncherStatusSeverity.Working);
             _view.AppendLog("Updating Workshop mods.");
@@ -95,7 +94,6 @@ internal sealed class LauncherWorkshopCoordinator
             _view.SetWorkshopButtonsDisabled(true);
             _view.SetStatus("Removing Workshop mods from the launcher...", LauncherStatusSeverity.Working);
             _view.AppendLog("Removing Workshop mods from the launcher.");
-            WorkshopModConsent.Clear();
             _model.ClearWorkshopMods();
         }
         catch (Exception ex)

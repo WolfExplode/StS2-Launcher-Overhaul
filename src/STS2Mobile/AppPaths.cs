@@ -17,7 +17,6 @@ internal static class AppPaths
     private const string WorkshopStagedDirectoryName = "staged";
     private const string WorkshopManifestFileName = "workshop_sync_manifest.json";
     private const string WorkshopClearMarkerFileName = "last_workshop_mod_clear.txt";
-    private const string WorkshopConsentMarkerFileName = "workshop_mods_accepted.txt";
     private const string ModsDirectoryName = "mods";
     private const string ModSelectionFileName = "mod_selection.json";
     private const string LastModLaunchFileName = "last_mod_launch.json";
@@ -29,8 +28,6 @@ internal static class AppPaths
         WorkshopStagedModsDir(AppPrivateDataDir);
     internal static string AppPrivateWorkshopManifestPath =>
         WorkshopManifestPath(AppPrivateDataDir);
-    internal static string AppPrivateWorkshopConsentMarkerPath =>
-        WorkshopConsentMarkerPath(AppPrivateDataDir);
     internal static string AppPrivateModSelectionPath =>
         ModSelectionPath(AppPrivateDataDir);
     internal static string AppPrivateLastModLaunchPath =>
@@ -47,9 +44,6 @@ internal static class AppPaths
 
     internal static string WorkshopClearMarkerPath(string dataDir) =>
         Path.Combine(dataDir, WorkshopModsDirectoryName, WorkshopClearMarkerFileName);
-
-    internal static string WorkshopConsentMarkerPath(string dataDir) =>
-        Path.Combine(dataDir, WorkshopModsDirectoryName, WorkshopConsentMarkerFileName);
 
     internal static string ModSelectionPath(string dataDir) =>
         Path.Combine(dataDir, ModsDirectoryName, ModSelectionFileName);
