@@ -20,11 +20,6 @@ internal static class SteamGameBranch
         return branch.Trim();
     }
 
-    internal static string ToggleKnownBranch(string branch)
-        => string.Equals(Normalize(branch), Public, StringComparison.OrdinalIgnoreCase)
-            ? Beta
-            : Public;
-
     internal static string DisplayName(string branch)
     {
         branch = Normalize(branch);

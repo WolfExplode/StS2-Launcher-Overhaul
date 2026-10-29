@@ -31,20 +31,6 @@ internal static partial class LauncherLaunchMarkers
         RecordPhase("steam auth failure classified", $"{report.Category}: {report.TechnicalMessage}");
     }
 
-    internal static string ReadSteamAuthFailure()
-    {
-        try
-        {
-            return File.Exists(SteamAuthFailurePath)
-                ? File.ReadAllText(SteamAuthFailurePath)
-                : null;
-        }
-        catch (Exception ex)
-        {
-            return $"Steam auth failure marker could not be read: {ex.Message}";
-        }
-    }
-
     private static string Sanitize(string value)
         => string.IsNullOrWhiteSpace(value)
             ? "<none>"

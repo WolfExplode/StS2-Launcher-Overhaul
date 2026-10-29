@@ -15,7 +15,4 @@ internal static class SteamBranchAvailabilityMarkerFields
     internal const string PasswordRequiredKey = "passwordRequired";
     internal const string BuildIdKey = "buildId";
     internal const string DescriptionKey = "description";
-
-    internal const string PasswordRequiredTrueToken = PasswordRequiredKey + "=true";
-    internal const string ZeroWindowsManifestDepotsToken = WindowsManifestDepotsKey + "=0";
 }

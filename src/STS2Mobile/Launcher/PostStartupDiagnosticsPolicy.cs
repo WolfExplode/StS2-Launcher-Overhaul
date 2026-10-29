@@ -39,8 +39,6 @@ internal sealed class PostStartupDiagnosticsScheduleGate
     private const int Stopped = 2;
     private int _state;
 
-    internal bool IsStopped => Volatile.Read(ref _state) == Stopped;
-
     internal bool TrySchedule()
         => Interlocked.CompareExchange(ref _state, Active, 0) == 0;
 

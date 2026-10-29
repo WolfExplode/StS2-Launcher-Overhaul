@@ -29,8 +29,6 @@ internal static class AppPaths
         WorkshopStagedModsDir(AppPrivateDataDir);
     internal static string AppPrivateWorkshopManifestPath =>
         WorkshopManifestPath(AppPrivateDataDir);
-    internal static string AppPrivateWorkshopClearMarkerPath =>
-        WorkshopClearMarkerPath(AppPrivateDataDir);
     internal static string AppPrivateWorkshopConsentMarkerPath =>
         WorkshopConsentMarkerPath(AppPrivateDataDir);
     internal static string AppPrivateModSelectionPath =>

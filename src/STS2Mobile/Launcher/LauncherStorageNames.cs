@@ -12,7 +12,6 @@ internal static class LauncherStorageNames
     internal const string GodotDirectory = ".godot";
     internal const string LaunchAttempt = "last_launch_attempt.txt";
     internal const string ManualSafeLaunch = "manual_safe_launch";
-    internal const string MainMenuPreparation = "last_main_menu_preparation.txt";
     internal const string MonoDirectory = "mono";
     internal const string PublishDirectory = "publish";
     internal const string ShaderWarmupStatus = "last_shader_warmup_status.txt";

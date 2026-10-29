@@ -6,19 +6,6 @@ namespace STS2Mobile;
 
 internal static class WorkshopModConsent
 {
-    internal static bool IsAccepted()
-    {
-        try
-        {
-            return File.Exists(AppPaths.AppPrivateWorkshopConsentMarkerPath);
-        }
-        catch (Exception ex)
-        {
-            PatchHelper.Log($"[Workshop] Failed to inspect mod consent marker: {ex.Message}");
-            return false;
-        }
-    }
-
     internal static void Accept(string reason)
     {
         try

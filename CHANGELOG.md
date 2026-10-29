@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 - Repository maintenance
+
+- Documentation now describes the current release only. Dated investigations, plans, audits, duplicate architecture pages and earlier release notes are removed; Git history and the GitHub releases keep them. The pending 20-launch stability procedure moved into the validation runbook.
+- Removed the legacy `scripts/build.sh`, which bypassed the pinned runtime staging, plus a duplicate icon and an unused logo. Documented how the native Steam and Sentry stub libraries reach the APK.
+- Removed the disabled event-layout and UI-scale dropdown patches, the UI-scale change event (which was never raised, so each combat room and main menu stayed subscribed), a diagnostics report that was never written, and other unreferenced members.
+
 ## 2026-10-29 - Launcher UI logic cleanup
 
 - Home now moves between explicit stages (setup guide, sign-in, Steam Guard, download, ready, retry), and each stage sets every Home section and play action, replacing six copies of the same visibility steps.

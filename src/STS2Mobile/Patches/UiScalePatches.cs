@@ -1,12 +1,12 @@
-using System;
 using HarmonyLib;
 
 namespace STS2Mobile.Patches;
 
-// Replaces the desktop resolution dropdown with a UI scale selector for mobile.
-// Persists the scale percentage to user://ui_scale.cfg and applies it by adjusting
-// the window's ContentScaleSize. Also intercepts window change handlers to maintain
-// the correct scale when the viewport resizes.
+// Applies the UI scale percentage saved in user://ui_scale.cfg (100% when absent)
+// by adjusting the window's ContentScaleSize, and intercepts window change handlers
+// to keep that scale when the viewport resizes. The settings-screen scale selector
+// that wrote the file is disabled: the Android runtime cannot safely Harmony-wrap
+// the resolution dropdown's private-field-heavy methods.
 internal static partial class UiScalePatches
 {
     private const int BaseHeight = 1080;
@@ -16,16 +16,10 @@ internal static partial class UiScalePatches
     private const int MinPercent = 100;
 
     internal static int UiScalePercent { get; private set; } = 100;
-    internal static event Action UiScaleChanged;
     private static bool _uiScaleLoaded = false;
 
     internal static void Apply(Harmony harmony)
     {
-        var sts2Asm = typeof(MegaCrit.Sts2.Core.Nodes.NGame).Assembly;
-
-        PatchHelper.Log(
-            "UI scale dropdown replacement disabled: current Android runtime cannot safely Harmony-wrap private-field-heavy resolution dropdown methods."
-        );
-        PatchWindowChangeHandlers(harmony, sts2Asm);
+        PatchWindowChangeHandlers(harmony, typeof(MegaCrit.Sts2.Core.Nodes.NGame).Assembly);
     }
 }
