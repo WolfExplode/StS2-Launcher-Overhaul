@@ -236,7 +236,8 @@ internal sealed class SaveSyncService
             && !string.IsNullOrWhiteSpace(_refreshToken);
 
     internal bool AutomaticPushAllowed
-        => Volatile.Read(ref _automaticPushAllowed) == 1;
+        => Volatile.Read(ref _automaticPushAllowed) == 1
+            && SteamSaveSyncSettings.IsEnabled(_local.RootPath);
 
     internal void PauseAutomaticPush()
         => Volatile.Write(ref _automaticPushAllowed, 0);
@@ -326,6 +327,37 @@ internal sealed class SaveSyncService
             PatchHelper.Log(
                 $"[Cloud] Local save notification failed: {ex.GetType().Name}"
             );
+        }
+    }
+
+    internal static async Task<int> CopyVanillaProfilesAsync(
+        string dataRoot,
+        string accountPath,
+        CancellationToken cancellationToken
+    )
+    {
+        SaveSyncService service;
+        lock (ActiveLock)
+            service = _active;
+        if (service == null)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return VanillaProfileCopy.Copy(dataRoot, accountPath);
+        }
+
+        await service._syncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            // Persist dirty state before replacing profiles, including offline
+            // copies. The existing baseline detects these edits at the next sync.
+            if (!service.MarkLocalChangesPending())
+                throw new IOException("Could not record the profile copy for save synchronization.");
+            return VanillaProfileCopy.Copy(dataRoot, accountPath);
+        }
+        finally
+        {
+            service._syncLock.Release();
         }
     }
 
@@ -588,6 +620,8 @@ internal sealed class SaveSyncService
         CancellationToken cancellationToken
     )
     {
+        if (!SteamSaveSyncSettings.IsEnabled(_local.RootPath))
+            return SyncDisabled();
         try
         {
             await _syncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -599,6 +633,10 @@ internal sealed class SaveSyncService
 
         try
         {
+            // Recheck after waiting: the user can disable sync while another
+            // operation holds the transfer boundary.
+            if (!SteamSaveSyncSettings.IsEnabled(_local.RootPath))
+                return SyncDisabled();
             ApplyPendingCredentials();
             var automaticPushWasAllowed = AutomaticPushAllowed;
             Volatile.Write(ref _automaticPushAllowed, 0);
@@ -807,6 +845,13 @@ internal sealed class SaveSyncService
             ApplyPendingCredentials();
             _syncLock.Release();
         }
+    }
+
+    private SyncResult SyncDisabled()
+    {
+        PauseAutomaticPush();
+        return new SyncResult(SyncOutcome.NoChange, false, true, SyncPrompt.None, 0,
+            "Steam save sync is disabled. Saves stay on this device.");
     }
 
     internal static SyncDecision Decide(

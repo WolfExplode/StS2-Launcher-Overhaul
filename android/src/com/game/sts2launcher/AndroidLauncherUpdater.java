@@ -44,6 +44,10 @@ final class AndroidLauncherUpdater {
     }
 
     void check(boolean manual) {
+        if (BuildConfig.STS2_LOCAL_DEV) {
+            if (manual) message("Development build", "Update this app from your computer with scripts/update-android-dev.ps1. Published releases use a different signing key.");
+            return;
+        }
         if (busy || (!manual && checked)) return;
         checked = true;
         busy = true;

@@ -17,6 +17,7 @@ internal sealed partial class LauncherView
         background.GuiInput += input => dismissKeyboard(input);
         parent.AddChild(background);
         var panel = new StyledPanel(profile.Scale, widthRatio: profile.PanelWidthRatio, compact: profile.Compact);
+        panel.Theme = LauncherFonts.CreateTheme();
         panel.UpdateSizeFromViewport(parent.GetViewport()?.GetVisibleRect().Size ?? new Vector2(1920, 1080), profile.PanelHeightRatio);
         panel.OnPanelGuiInput(dismissKeyboard);
         parent.AddChild(panel);

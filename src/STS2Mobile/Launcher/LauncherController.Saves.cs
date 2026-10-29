@@ -59,6 +59,8 @@ internal sealed partial class LauncherController
 
     private void StartAutomaticSaveSync()
     {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+            return;
         if (Interlocked.CompareExchange(ref _automaticSaveSyncStarted, 1, 0) != 0)
             return;
 
@@ -85,6 +87,11 @@ internal sealed partial class LauncherController
         bool overwriteConfirmed
     )
     {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+        {
+            ApplySaveSyncPresentation(LauncherSaveSyncPresentation.Disabled());
+            return;
+        }
         if (Interlocked.CompareExchange(ref _saveSyncRunning, 1, 0) != 0)
             return;
 
@@ -159,6 +166,12 @@ internal sealed partial class LauncherController
     )
     {
         _view.SetSaveSyncControlsDisabled(false);
+
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+        {
+            RefreshSaveSyncPresentation();
+            return;
+        }
 
         if (result.Prompt == SaveSyncService.SyncPrompt.ChooseSource)
         {
@@ -255,9 +268,28 @@ internal sealed partial class LauncherController
 
     private void ApplySaveSyncPresentation(LauncherSaveSyncPresentation presentation)
     {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+            presentation = LauncherSaveSyncPresentation.Disabled();
         _saveSyncPresentation = presentation;
         _saveSyncPresentationInitialized = true;
         _view.SetSaveSyncPresentation(presentation);
+    }
+
+    private void SaveSyncPreferenceChanged()
+    {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+        {
+            CancelActiveSaveSync();
+            if (SaveSyncService.TryGetActive(out var service))
+                service.PauseAutomaticPush();
+            ApplySaveSyncPresentation(LauncherSaveSyncPresentation.Disabled());
+        }
+        else
+        {
+            RefreshSaveSyncPresentation();
+            Interlocked.Exchange(ref _automaticSaveSyncStarted, 0);
+            StartAutomaticSaveSync();
+        }
     }
 
     private void RestoreSaveSyncPresentationBeforeOperation()

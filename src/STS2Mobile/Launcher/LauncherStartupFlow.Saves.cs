@@ -15,8 +15,11 @@ internal static partial class LauncherStartupFlow
         StartupContext startup
     )
     {
-        startup.SetPhase(PhaseSettingsAndSaves, "Synchronizing saves before loading...");
-        ConfigureSaveSyncForGameProcess();
+        var syncEnabled = SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir);
+        startup.SetPhase(PhaseSettingsAndSaves, syncEnabled
+            ? "Synchronizing saves before loading..." : "Loading local saves...");
+        if (syncEnabled)
+            ConfigureSaveSyncForGameProcess();
         if (!SaveSyncService.TryGetActive(out var service))
             service = null;
         var skipSync = startup.ShouldSkipShaderWarmup();
@@ -62,6 +65,12 @@ internal static partial class LauncherStartupFlow
         bool skipSync
     )
     {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+        {
+            service?.PauseAutomaticPush();
+            PatchHelper.Log("[Cloud] Steam save sync disabled; loading local saves without contacting Steam Cloud");
+            return;
+        }
         if (skipSync)
         {
             service?.PauseAutomaticPush();

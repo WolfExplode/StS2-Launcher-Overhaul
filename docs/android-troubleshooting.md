@@ -50,6 +50,15 @@ If both Android and Steam changed, choose carefully when asked which copy to kee
 
 Report whether this happened after starting, resuming, rotating, or unlocking the app. Include a screenshot if possible. Selecting a login or Steam Guard field should still open the keyboard normally.
 
+## Skip Steam save synchronization
+
+Open **Saves** and turn **Steam save sync** off to use only saves on this device.
+The preference survives restarts and applies to both Vanilla and Modded play.
+It skips launcher and game-start save synchronization, automatic uploads, and
+manual Steam save transfers. Local saves and **Copy Vanilla to Modded** remain
+available. Turn it on again to use Steam Cloud; normal conflict checks still
+apply to any local changes made while sync was off.
+
 ## Send a useful bug report
 
 Open **Help → Report a bug on GitHub**. The launcher fills in redacted diagnostic information. Add:

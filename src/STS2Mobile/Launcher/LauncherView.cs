@@ -12,6 +12,11 @@ internal sealed partial class LauncherView
     private CodeSection Code { get; }
     private DownloadSection Download { get; }
     private ActionSection Actions { get; }
+    internal event Action SaveSyncPreferenceChanged
+    {
+        add => Actions.SaveSyncPreferenceChanged += value;
+        remove => Actions.SaveSyncPreferenceChanged -= value;
+    }
     private VBoxContainer HomeSections { get; }
     private ScrollContainer PrimaryScroll { get; }
     private Control FirstRunGuide { get; }
@@ -125,7 +130,7 @@ internal sealed partial class LauncherView
         SetCompactCurrentTask("Start here", FirstRunGuide, "Setup guide");
     }
 
-    internal void WireEvents(Action<string, string> loginRequested, Action<string> codeSubmitted, Action downloadRequested, Action<string> gameBranchChanged, Action<string> rendererModeChanged, Action launchPressed, Action retryPressed, Action checkForUpdatesPressed, Action updateSelectedVersionPressed, Action refreshGameVersionsPressed, Action redownloadPressed, Action diagnosticsPressed, Action showLastErrorPressed, Action copyRawLogPressed, Action safeLaunchPressed, Action saveSyncNowPressed, Action savePullPressed, Action savePushPressed, Action workshopSyncPressed, Action workshopClearPressed, Action modsSelectionChanged = null, Action reportBugPressed = null, Action checkAppUpdatesPressed = null)
+    internal void WireEvents(Action<string, string> loginRequested, Action<string> codeSubmitted, Action downloadRequested, Action<string> gameBranchChanged, Action<string> rendererModeChanged, Action launchPressed, Action retryPressed, Action checkForUpdatesPressed, Action updateSelectedVersionPressed, Action refreshGameVersionsPressed, Action redownloadPressed, Action diagnosticsPressed, Action showLastErrorPressed, Action copyRawLogPressed, Action safeLaunchPressed, Action saveSyncNowPressed, Action savePullPressed, Action savePushPressed, Action workshopSyncPressed, Action workshopClearPressed, Action modsSelectionChanged = null, Action reportBugPressed = null, Action checkAppUpdatesPressed = null, Action copyVanillaToModdedPressed = null)
     {
         Login.LoginRequested += loginRequested;
         Login.StatusRequested += SetStatus;
@@ -152,6 +157,8 @@ internal sealed partial class LauncherView
         Actions.SaveSyncNowPressed += saveSyncNowPressed;
         Actions.SavePullPressed += savePullPressed;
         Actions.SavePushPressed += savePushPressed;
+        if (copyVanillaToModdedPressed != null)
+            Actions.CopyVanillaToModdedPressed += copyVanillaToModdedPressed;
         Actions.WorkshopSyncPressed += workshopSyncPressed;
         Actions.WorkshopClearPressed += workshopClearPressed;
         if (modsSelectionChanged != null)

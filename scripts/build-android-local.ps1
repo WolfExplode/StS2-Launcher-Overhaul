@@ -2,6 +2,9 @@ param(
     [string]$VersionName = "0.2.0-local",
     [int]$VersionCode = 200000,
     [string]$PackageName = "com.sts2launcher.overhaul.fork.local",
+    [string]$AppLabel = "StS2 Launcher",
+    [switch]$DevBuild,
+    [switch]$KeepGradleDaemon,
     [string]$AndroidHome = "$(Join-Path $env:USERPROFILE '.w40k-android-toolchain\android-sdk')",
     [string]$JavaHome = "$(Join-Path $env:USERPROFILE '.w40k-android-toolchain\jdk-17')",
     [string]$GradlePath = "$(Join-Path $env:USERPROFILE '.gradle\wrapper\dists\gradle-8.14.3-all\10utluxaxniiv4wxiphsi49nj\gradle-8.14.3\bin\gradle.bat')",
@@ -15,6 +18,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($DevBuild -and $PackageName -ne "com.sts2launcher.overhaul.fork.devlocal") {
+    throw "Dev builds must use the separate com.sts2launcher.overhaul.fork.devlocal package."
+}
 
 . (Join-Path $PSScriptRoot "android-apk-utils.ps1")
 
@@ -276,8 +283,10 @@ $resolvedKeystore = (Resolve-Path $KeystorePath).Path
 $targetAbis = Resolve-AndroidApkTargetAbis -Abi $Abi
 $gradleAbiList = $targetAbis -join ","
 
-Write-Host "Stopping existing Gradle daemons..."
-& $GradlePath "--stop" | Out-Null
+if (-not $KeepGradleDaemon) {
+    Write-Host "Stopping existing Gradle daemons..."
+    & $GradlePath "--stop" | Out-Null
+}
 
 Write-Host "Building Android APK..."
 $gradleArgs = @(
@@ -286,6 +295,8 @@ $gradleArgs = @(
     "-Pexport_version_name=$VersionName",
     "-Pexport_version_code=$VersionCode",
     "-Pexport_package_name=$PackageName",
+    "-Psts2_app_label=$AppLabel",
+    "-Psts2_local_dev=$($DevBuild.IsPresent.ToString().ToLowerInvariant())",
     "-Pexport_enabled_abis=$gradleAbiList",
     "-Prelease_keystore_file=$resolvedKeystore",
     "-Prelease_keystore_password=$KeystorePassword",
@@ -336,7 +347,7 @@ $metadata = [ordered]@{
     versionName = $VersionName
     versionCode = $VersionCode
     packageName = $PackageName
-    signingChannel = "local"
+    signingChannel = $(if ($DevBuild) { "dev" } else { "local" })
     keystore = (Split-Path -Leaf $resolvedKeystore)
     abi = $Abi
     apk = (Split-Path -Leaf $archivedApk)

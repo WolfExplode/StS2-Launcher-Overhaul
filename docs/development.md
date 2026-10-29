@@ -176,6 +176,22 @@ Check in-place update compatibility against the retained previous APK:
 
 Current ownership is in [the reduction inventory](../REDUCTION_INVENTORY.md). Build-specific results belong in [Android testing status](current-android-status.md).
 
+## Quick phone updates with a local dev build
+
+With one authorized ARM64 phone connected, run:
+
+```powershell
+.\scripts\update-android-dev.ps1
+```
+
+For multiple devices, add `-DeviceSerial <serial>`. Use `-BuildOnly` to create the APK without installing it.
+
+This installs **StS2 Launcher Dev** as the separate package `com.sts2launcher.overhaul.fork.devlocal`. It creates a persistent signing key in `%LOCALAPPDATA%\StS2Launcher\dev\dev.keystore`, increments the version code, checks signing compatibility, and uses `adb install -r` to preserve dev app data on later updates. Keep that directory when changing checkouts or backing up your development setup. The wrapper refuses to replace a missing or changed key after an existing dev build.
+
+The dev app allows ADB debugging and reuses the Gradle daemon. Published-release update prompts are disabled; run the same command after editing the source. Builds still publish the managed code and verify APK contents and crypto patches.
+
+The first dev install has its own data: sign in and download the game once. It cannot inherit the installed release's private files or update that release without its original signing key. Future dev updates retain the dev login, game files, settings, and saves.
+
 ## Source layout
 
 ```text

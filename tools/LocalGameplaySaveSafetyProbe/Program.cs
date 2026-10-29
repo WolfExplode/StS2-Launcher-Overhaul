@@ -26,6 +26,8 @@ internal static class Program
             "local save writes are atomic",
             LocalSaveWritesAreAtomicAsync
         );
+        await RunAsync("vanilla profile copy preserves separate saves and backups", VanillaProfileCopyIsSafeAsync);
+        await RunAsync("disabled Steam sync survives restart and never contacts remote", DisabledSteamSyncNeverContactsRemoteAsync);
         await RunAsync(
             "synchronization makes four deterministic decisions",
             SynchronizationMakesFourDecisionsAsync
@@ -67,13 +69,120 @@ internal static class Program
             AndroidStartupGuardStaysAliveAfterMainMenuPreparationAsync
         );
 
-        Console.WriteLine($"Focused local-save, synchronization, mod, version, and startup probe passed {_passed}/12 scenarios.");
+        Console.WriteLine($"Focused local-save, synchronization, mod, version, and startup probe passed {_passed}/14 scenarios.");
         Console.WriteLine(
             "Scope: FakeSaveRemote validates deterministic synchronization behavior only; it does not prove Steam Cloud or Android transport."
         );
         Console.WriteLine(
             "Scope: the representative mod is a desktop fixture; it does not prove Android mod activation or an in-game effect."
         );
+    }
+
+    private static async Task DisabledSteamSyncNeverContactsRemoteAsync()
+    {
+        var root = NewTempDirectory();
+        try
+        {
+            Expect(SteamSaveSyncSettings.IsEnabled(root), "Existing installations should keep sync enabled.");
+            WriteSave(root, "a.save", "baseline");
+            var remote = new FakeSaveRemote(("a.save", Bytes("baseline")));
+            var service = new SaveSyncService(new AndroidLocalSaveStore(root), remote);
+            Expect((await ReconcileAsync(service)).Success, "Could not establish the fixture baseline.");
+            SteamSaveSyncSettings.SetEnabled(root, false);
+            var restarted = new SaveSyncService(new AndroidLocalSaveStore(root), remote);
+            var enumerationCount = remote.EnumerateCount;
+            var downloadCount = remote.DownloadCount;
+            var uploadCount = remote.UploadCount;
+            WriteSave(root, "a.save", "local-only");
+            service.NotifyLocalMutationCommitted("a.save");
+            Expect(!service.AutomaticPushAllowed, "Disabling sync left automatic uploads enabled.");
+            foreach (var request in Enum.GetValues<SaveSyncService.SyncRequest>())
+            {
+                var result = await restarted.SyncAsync(request, true, true, CancellationToken.None);
+                Expect(result.Canceled && !result.Success, $"Disabled {request} was not blocked.");
+            }
+            Expect(remote.EnumerateCount == enumerationCount && remote.DownloadCount == downloadCount
+                && remote.UploadCount == uploadCount, "Disabled sync contacted the remote.");
+            Expect(File.ReadAllText(Path.Combine(root, "a.save")) == "local-only",
+                "Disabling sync changed the local save.");
+            SteamSaveSyncSettings.SetEnabled(root, true);
+            var resumed = await ReconcileAsync(service);
+            Expect(resumed.Success && resumed.Outcome == SaveSyncService.SyncOutcome.Push,
+                "Re-enabling sync failed to reconcile preserved local changes.");
+            Expect(remote.ReadFile("a.save").SequenceEqual(Bytes("local-only")),
+                "Re-enabled sync lost the local-only save.");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static Task VanillaProfileCopyIsSafeAsync()
+    {
+        // The launcher must prepare the copy without resolving desktop game
+        // APIs. Mono can load their Steam dependencies even on unused branches.
+        using (var module = Mono.Cecil.ModuleDefinition.ReadModule(typeof(LauncherController).Assembly.Location))
+        {
+            var controller = module.Types.Single(type => type.FullName == typeof(LauncherController).FullName);
+            var start = controller.Methods.Single(method => method.Name == "StartVanillaProfileCopy");
+            Expect(!start.Body.Instructions.Any(instruction =>
+                instruction.Operand is Mono.Cecil.MemberReference member
+                && member.DeclaringType?.FullName.StartsWith("MegaCrit.", StringComparison.Ordinal) == true),
+                "Starting a profile copy still resolves desktop game APIs.");
+        }
+        var root = NewTempDirectory();
+        try
+        {
+            Expect(VanillaProfileCopy.ResolveAndroidAccountPath(root, false) == Path.Combine(root, "default", "0"),
+                "Android account fallback changed.");
+            var account = root;
+            var source = Path.Combine(account, "profile1", "saves");
+            var target = Path.Combine(account, "modded", "profile1", "saves");
+            Directory.CreateDirectory(source);
+            Directory.CreateDirectory(target);
+            File.WriteAllText(Path.Combine(source, "progress.save"), "vanilla-progress");
+            Expect(VanillaProfileCopy.ResolveAndroidAccountPath(root, false) == root,
+                "Steam-imported root profiles were not detected.");
+            File.WriteAllText(Path.Combine(source, "current_run.save"), "vanilla-run");
+            File.WriteAllText(Path.Combine(source, "current_run_mp.save.backup"), "vanilla-mp-run");
+            File.WriteAllText(Path.Combine(target, "progress.save"), "old-modded-progress");
+            File.WriteAllText(Path.Combine(target, "current_run.save"), "old-modded-run");
+            var history = Path.Combine(account, "profile1", "run_history");
+            Directory.CreateDirectory(history);
+            File.WriteAllText(Path.Combine(history, "completed.run"), "history");
+            var untouched = Path.Combine(account, "modded", "profile3", "saves");
+            Directory.CreateDirectory(untouched);
+            File.WriteAllText(Path.Combine(untouched, "progress.save"), "keep");
+            Expect(VanillaProfileCopy.Copy(root, account) == 1, "Wrong copied profile count.");
+            Expect(File.ReadAllText(Path.Combine(target, "progress.save")) == "vanilla-progress", "Progress was not copied.");
+            Expect(File.Exists(Path.Combine(account, "modded", "profile1", "run_history", "completed.run")), "History was not copied.");
+            Expect(!Directory.GetFiles(target, "current_run*").Any(), "Active runs survived the copy.");
+            Expect(File.ReadAllText(Path.Combine(source, "current_run.save")) == "vanilla-run", "Vanilla run changed.");
+            Expect(File.ReadAllText(Path.Combine(untouched, "progress.save")) == "keep", "Unmatched profile changed.");
+            var backups = Directory.GetFiles(Path.Combine(root, ".sts2-launcher"), "progress.save", SearchOption.AllDirectories);
+            Expect(backups.Any(path => File.ReadAllText(path) == "old-modded-progress"), "Original modded progress was not backed up.");
+
+            // A staging failure must not partially replace an earlier profile.
+            File.WriteAllText(Path.Combine(target, "progress.save"), "keep-on-failure");
+            var second = Path.Combine(account, "profile2", "saves");
+            Directory.CreateDirectory(second);
+            File.WriteAllText(Path.Combine(second, "progress.save"), "second");
+            File.WriteAllText(Path.Combine(account, "modded", "profile2"), "blocking-file");
+            var failed = false;
+            try { VanillaProfileCopy.Copy(root, account); }
+            catch (IOException) { failed = true; }
+            Expect(failed, "Blocked destination did not fail.");
+            Expect(File.ReadAllText(Path.Combine(target, "progress.save")) == "keep-on-failure", "Failed copy did not restore replaced profile.");
+            var emptyAccount = Path.Combine(root, "default", "0");
+            Directory.CreateDirectory(emptyAccount);
+            failed = false;
+            try { VanillaProfileCopy.Copy(root, emptyAccount); }
+            catch (InvalidOperationException) { failed = true; }
+            Expect(failed && !Directory.Exists(Path.Combine(emptyAccount, "modded")), "Missing vanilla data modified modded saves.");
+        }
+        finally { Directory.Delete(root, recursive: true); }
+        return Task.CompletedTask;
     }
 
     private static Task SelectedGameVersionSurvivesRestartAndDrivesLaunchReadinessAsync()
@@ -1438,6 +1547,8 @@ internal static class Program
         private bool _failNextEnumerationOffline;
         private bool _holdNextUpload;
         private int _downloadCount;
+        private int _enumerateCount;
+        internal int EnumerateCount => Volatile.Read(ref _enumerateCount);
         private int _uploadCount;
         private TaskCompletionSource<bool> _uploadEntered = NewSignal();
         private TaskCompletionSource<bool> _releaseUpload = NewSignal();
@@ -1534,6 +1645,7 @@ internal static class Program
             CancellationToken cancellationToken
         )
         {
+            Interlocked.Increment(ref _enumerateCount);
             cancellationToken.ThrowIfCancellationRequested();
             lock (_gate)
             {

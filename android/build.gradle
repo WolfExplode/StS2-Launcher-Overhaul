@@ -125,6 +125,8 @@ android {
         versionCode getExportVersionCode()
         versionName getExportVersionName()
         versionNameSuffix ""
+        manifestPlaceholders.sts2AppLabel = getProjectStringProperty('sts2_app_label', 'StS2 Launcher')
+        buildConfigField 'boolean', 'STS2_LOCAL_DEV', getProjectStringProperty('sts2_local_dev', 'false')
         minSdkVersion getExportMinSdkVersion()
         targetSdkVersion getExportTargetSdkVersion()
 
@@ -221,6 +223,7 @@ android {
         release {
             // Signing and zip-aligning are skipped for prebuilt builds, but
             // performed for Godot gradle builds.
+            debuggable getProjectStringProperty('sts2_local_dev', 'false').toBoolean()
             zipAlignEnabled shouldZipAlign()
             if (shouldSign()) {
                 signingConfig signingConfigs.release

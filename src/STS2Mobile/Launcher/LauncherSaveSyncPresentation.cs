@@ -6,6 +6,7 @@ namespace STS2Mobile.Launcher;
 
 internal enum LauncherSaveSyncState
 {
+    Disabled,
     UpToDate,
     NotSyncedYet,
     Syncing,
@@ -26,6 +27,9 @@ internal readonly record struct LauncherSaveSyncPresentation(
     string SteamState
 )
 {
+    internal static LauncherSaveSyncPresentation Disabled()
+        => new(LauncherSaveSyncState.Disabled, "Steam save sync is off · Saves stay on this device",
+            "Local saves", "Saved locally", "Sync disabled");
     internal bool ShowEndpointDetails
         => State is LauncherSaveSyncState.SyncFailed
             or LauncherSaveSyncState.Offline

@@ -117,10 +117,12 @@ public partial class PreviewRoot : Control
 
         if (ReadBool("interaction-test", false))
         {
+            await AssertViewportRestore(previewViewport);
             LauncherUiInteractionTest.Run(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertModsRefreshRejectsStaleCompletionAsync(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertModsScrollAfterListGrowthAsync(_previewView, _previewRoot);
             await LauncherUiInteractionTest.AssertTabletModsScrollingAsync(this);
+            await AssertModsDragScrolling(previewViewport);
             foreach (var fixture in new[] { "ready", "error", "signed-out", "guard", "download" })
             {
                 ApplyFixture(_previewView, fixture);
@@ -157,6 +159,39 @@ public partial class PreviewRoot : Control
         GetTree().Quit();
     }
 
+    private async Task AssertModsDragScrolling(SubViewport viewport)
+    {
+        _previewView.SelectDestination(LauncherDestination.Mods);
+        var mods = Enumerable.Range(0, 30).Select(i => new LauncherModPresentationItem(
+            $"preview:{i}", $"mod{i}", $"Scroll test mod {i}", "Workshop",
+            true, false, true, LauncherModLastLaunchState.NotTestedYet, false, "Touch scrolling fixture")).ToArray();
+        _previewView.SetModsPresentation(new LauncherModsPresentation(
+            LauncherModPlayMode.Vanilla, "scroll-test", "Vanilla saves", mods, mods.Length, 0, false));
+        await NextFrames(8);
+        var scroll = (ScrollContainer)_previewRoot.FindChild("LauncherPrimaryScroll", true, false);
+        var row = (Control)_previewRoot.FindChild("ModRow", true, false);
+        scroll.EnsureControlVisible(row);
+        await NextFrames(4);
+        var start = row.GetGlobalRect().Position + new Vector2(40, row.Size.Y / 2);
+        var before = scroll.ScrollVertical;
+        if (!DisplayServer.IsTouchscreenAvailable())
+            throw new InvalidOperationException("Mods drag test requires touch emulation in the preview project.");
+        viewport.PushInput(new InputEventMouseButton { Position = start, GlobalPosition = start, ButtonIndex = MouseButton.Left, Pressed = true }, true);
+        for (var i = 1; i <= 4; i++)
+        {
+            var position = start - new Vector2(0, i * 20);
+            viewport.PushInput(new InputEventMouseMotion { Position = position, GlobalPosition = position, Relative = new Vector2(0, -20), ButtonMask = MouseButtonMask.Left }, true);
+            await NextFrames(1);
+        }
+        viewport.PushInput(new InputEventMouseButton { Position = start - new Vector2(0, 80), ButtonIndex = MouseButton.Left, Pressed = false }, true);
+        if (scroll.ScrollVertical <= before)
+            throw new InvalidOperationException($"Dragging a mod row did not scroll: {before} -> {scroll.ScrollVertical}.");
+        if (((CheckButton)row.FindChild("ModEnabledToggle", true, false)).ButtonPressed)
+            throw new InvalidOperationException("Dragging a mod row changed its enabled state.");
+        GD.Print($"PREVIEW_MODS_DRAG=passed ({before} -> {scroll.ScrollVertical})");
+        _previewView.SetModsPresentation(ReadyVanillaModsPresentation());
+    }
+
     private static void AssertHorizontalFit(ScrollContainer scroll)
     {
         var bounds = scroll.GetGlobalRect();
@@ -164,6 +199,23 @@ public partial class PreviewRoot : Control
         scroll.ScrollHorizontal = 100;
         if (scroll.ScrollHorizontal != 0)
             throw new InvalidOperationException("Launcher still permits horizontal scrolling.");
+    }
+
+    private async Task AssertViewportRestore(SubViewport viewport)
+    {
+        var original = viewport.Size;
+        _previewRoot.CustomMinimumSize = Vector2.Zero;
+        foreach (var size in new[] { new Vector2I(1080, 2340), new Vector2I(2340, 1080), new Vector2I(1080, 2340), original })
+        {
+            viewport.Size = size;
+            _previewRoot.Size = size;
+            _previewView.UpdateViewportSize(size);
+            await NextFrames(8);
+            var panel = _previewRoot.GetChildren().OfType<STS2Mobile.Launcher.Components.StyledPanel>().Single();
+            GD.Print($"VIEWPORT_RESTORE size={size} root={_previewRoot.GetRect()} panel={panel.GetRect()}");
+            if (panel.Position.DistanceSquaredTo(Vector2.Zero) > 1f || panel.Size.DistanceSquaredTo(size) > 1f)
+                throw new InvalidOperationException($"Launcher panel displaced after viewport restore: {panel.GetRect()} viewport={size}");
+        }
     }
 
     private static void AssertChildrenFit(Node parent, Rect2 bounds)

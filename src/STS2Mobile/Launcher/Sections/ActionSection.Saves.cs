@@ -1,10 +1,14 @@
 using Godot;
 using STS2Mobile.Launcher.Components;
+using STS2Mobile.Steam;
 
 namespace STS2Mobile.Launcher.Sections;
 
 internal sealed partial class ActionSection
 {
+    internal event System.Action SaveSyncPreferenceChanged;
+    private CheckButton _steamSaveSyncToggle;
+    private bool _saveSyncControlsBusy;
     private (
         VBoxContainer Group,
         Button SyncNowButton,
@@ -20,8 +24,34 @@ internal sealed partial class ActionSection
         group.Name = "SaveSyncPresentation";
         AddChild(group);
 
+        _steamSaveSyncToggle = new CheckButton
+        {
+            Name = "SteamSaveSyncToggle",
+            Text = "Steam save sync",
+            ButtonPressed = SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
+            AccessibilityName = "Steam save sync",
+        };
+        _steamSaveSyncToggle.AddThemeFontSizeOverride("font_size",
+            LauncherComponentTheme.ScaleInt(scale, compact ? 15 : 16));
+        _steamSaveSyncToggle.Toggled += enabled =>
+        {
+            try
+            {
+                SteamSaveSyncSettings.SetEnabled(AppPaths.AppPrivateDataDir, enabled);
+            }
+            catch (System.Exception ex)
+            {
+                _steamSaveSyncToggle.SetPressedNoSignal(SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir));
+                PatchHelper.Log($"[Cloud] Could not save sync preference: {ex.Message}");
+                return;
+            }
+            SetSaveSyncControlsDisabled(_saveSyncControlsBusy);
+            SaveSyncPreferenceChanged?.Invoke();
+        };
+        group.AddChild(_steamSaveSyncToggle);
+
         var namespaceExplanation = new StyledLabel(
-            "Vanilla and modded saves are separate. Both sync automatically.",
+            "Vanilla and modded saves are separate. Turn sync off to use local saves and skip Steam Cloud transfers.",
             scale,
             fontSize: compact ? 12 : 13,
             align: HorizontalAlignment.Left
@@ -108,6 +138,16 @@ internal sealed partial class ActionSection
         push.AccessibilityName = "Send saves to Steam";
         LauncherButtonStyles.ApplySupportAction(push, scale);
 
+        _copyVanillaToModdedButton = AddActionButton(
+            actions,
+            "Copy Vanilla to Modded",
+            scale,
+            () => CopyVanillaToModdedPressed?.Invoke()
+        );
+        _copyVanillaToModdedButton.Name = "CopyVanillaToModdedButton";
+        _copyVanillaToModdedButton.AccessibilityName = "Copy Vanilla to Modded";
+        LauncherButtonStyles.ApplySupportAction(_copyVanillaToModdedButton, scale);
+
         return (
             group,
             syncNow,
@@ -122,13 +162,21 @@ internal sealed partial class ActionSection
 
     internal void SetSaveSyncControlsDisabled(bool disabled)
     {
-        _saveSyncNowButton.Disabled = disabled;
-        _savePullButton.Disabled = disabled;
-        _savePushButton.Disabled = disabled;
+        _saveSyncControlsBusy = disabled;
+        var syncDisabled = disabled || !SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir);
+        _saveSyncNowButton.Disabled = syncDisabled;
+        _savePullButton.Disabled = syncDisabled;
+        _savePushButton.Disabled = syncDisabled;
+        _copyVanillaToModdedButton.Disabled = disabled;
     }
 
     internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation)
     {
+        var enabled = SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir);
+        _steamSaveSyncToggle.SetPressedNoSignal(enabled);
+        if (!enabled)
+            presentation = LauncherSaveSyncPresentation.Disabled();
+        SetSaveSyncControlsDisabled(_saveSyncControlsBusy);
         _saveSyncStatus.Text = PresentationText(
             presentation.Summary,
             "Not synced yet"

@@ -26,6 +26,7 @@ internal sealed partial class ActionSection : VBoxContainer
     internal event Action SaveSyncNowPressed;
     internal event Action SavePullPressed;
     internal event Action SavePushPressed;
+    internal event Action CopyVanillaToModdedPressed;
     internal event Action WorkshopSyncPressed;
     internal event Action WorkshopClearPressed;
     internal event Action ModsSelectionChanged;
@@ -55,6 +56,7 @@ internal sealed partial class ActionSection : VBoxContainer
     private readonly Button _saveSyncNowButton;
     private readonly Button _savePullButton;
     private readonly Button _savePushButton;
+    private Button _copyVanillaToModdedButton;
     private readonly Label _saveSyncStatus;
     private readonly GridContainer _saveSyncDetails;
     private readonly Label _saveLocalState;

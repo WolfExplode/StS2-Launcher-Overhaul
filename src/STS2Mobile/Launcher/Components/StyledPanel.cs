@@ -69,16 +69,19 @@ internal sealed class StyledPanel : CenterContainer
     }
 
     internal void UpdateSizeFromViewport(Vector2 vpSize)
-        => _panelContainer.CustomMinimumSize = new Vector2(
-            ConstrainWidth(vpSize),
-            ConstrainHeight(vpSize, 0.85f)
-        );
+        => UpdateSizeFromViewport(vpSize, 0.85f);
 
     internal void UpdateSizeFromViewport(Vector2 vpSize, float heightRatio)
-        => _panelContainer.CustomMinimumSize = new Vector2(
+    {
+        _panelContainer.CustomMinimumSize = new Vector2(
             ConstrainWidth(vpSize),
             ConstrainHeight(vpSize, heightRatio)
         );
+        // A parent resize can arrive before the old panel minimum is reduced.
+        // Restore the full rect after changing that minimum so a portrait height
+        // cannot remain as a landscape offset (or vice versa).
+        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+    }
 
     private float ConstrainWidth(Vector2 vpSize)
         => _compact

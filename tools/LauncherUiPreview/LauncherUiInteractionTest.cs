@@ -921,7 +921,28 @@ internal static class LauncherUiInteractionTest
         Press(root, "Sync now");
         Press(root, "Get saves from Steam");
         Press(root, "Send saves to Steam");
+        view.SetSaveSyncControlsDisabled(true);
+        Expect(FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
+            "Profile copy remained available during synchronization.");
+        view.SetSaveSyncControlsDisabled(false);
+        Press(root, "Copy Vanilla to Modded");
+        Expect(events.ProfileCopy == 1, "Profile copy callback was not invoked exactly once.");
         AssertSaveConfirmations(view, root);
+        var syncToggle = FindUniqueVisibleNamed<CheckButton>(root, "SteamSaveSyncToggle");
+        var preferenceChanges = 0;
+        view.SaveSyncPreferenceChanged += () => preferenceChanges++;
+        syncToggle.ButtonPressed = false;
+        Expect(!STS2Mobile.Steam.SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
+            "Turning off Steam save sync did not persist the preference.");
+        view.SetSaveSyncPresentation(UpToDateSavePresentation());
+        Expect(FindUniqueVisibleNamed<Label>(root, "SaveSyncHeadline").Text.Contains("sync is off"),
+            "Disabled sync still displayed a cloud synchronization status.");
+        Expect(FindVisibleButton(root, "Sync now").Disabled,
+            "Disabled sync left manual transfers enabled.");
+        Expect(!FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
+            "Disabling cloud sync disabled local profile copying.");
+        syncToggle.ButtonPressed = true;
+        Expect(preferenceChanges == 2, "Sync preference changes did not reach the view.");
         view.SetSaveSyncPresentation(UpToDateSavePresentation());
     }
 
@@ -937,7 +958,7 @@ internal static class LauncherUiInteractionTest
         AssertVisibleLabelText(
             root,
             "SaveNamespaceExplanation",
-            "Vanilla and modded saves are separate. Both sync automatically."
+            "Vanilla and modded saves are separate. Turn sync off to use local saves and skip Steam Cloud transfers."
         );
         var headline = FindUniqueVisibleNamed<Label>(root, "SaveSyncHeadline");
         Expect(headline.Text == expectedSummary, $"Expected save summary '{expectedSummary}'; found '{headline.Text}'.");
@@ -969,16 +990,16 @@ internal static class LauncherUiInteractionTest
             topLevelCopy.SequenceEqual(
                 new[]
                 {
-                    "Vanilla and modded saves are separate. Both sync automatically.",
+                    "Vanilla and modded saves are separate. Turn sync off to use local saves and skip Steam Cloud transfers.",
                     expectedSummary,
                 }
             ),
             $"{presentation.State} repeated or obscured the Saves truth."
         );
         var buttons = Descendants<Button>(saves)
-            .Where(button => IsLiveAndVisible(button) && button is not OptionButton)
+            .Where(button => IsLiveAndVisible(button) && button is not OptionButton && button is not CheckButton)
             .ToArray();
-        Expect(buttons.Length == 3, $"{presentation.State} did not expose exactly three save actions.");
+        Expect(buttons.Length == 4, $"{presentation.State} did not expose exactly four save actions.");
         Expect(
             buttons.Select(AccessibleButtonText).SequenceEqual(
                 new[]
@@ -986,6 +1007,7 @@ internal static class LauncherUiInteractionTest
                     "Sync now",
                     "Get saves from Steam",
                     "Send saves to Steam",
+                    "Copy Vanilla to Modded",
                 }
             ),
             $"{presentation.State} exposed unclear save actions."
@@ -1738,7 +1760,8 @@ internal static class LauncherUiInteractionTest
                 ),
             modsSelectionChanged: () => events.ModsSelectionChanged++,
             reportBugPressed: () => events.ReportBug++,
-            checkAppUpdatesPressed: () => events.AppUpdate++
+            checkAppUpdatesPressed: () => events.AppUpdate++,
+            copyVanillaToModdedPressed: () => events.ProfileCopy++
         );
     }
 
@@ -1751,6 +1774,7 @@ internal static class LauncherUiInteractionTest
         internal int SaveSyncNow;
         internal int SaveGet;
         internal int SaveSend;
+        internal int ProfileCopy;
         internal int CheckForUpdates;
         internal int RefreshVersions;
         internal int UpdateSelectedVersion;

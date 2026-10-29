@@ -18,6 +18,10 @@ window/stretch/mode="canvas_items"
 
 project/assembly_name="LauncherUiPreview"
 
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
