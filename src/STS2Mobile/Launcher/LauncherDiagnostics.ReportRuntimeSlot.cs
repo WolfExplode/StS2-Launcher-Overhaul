@@ -120,7 +120,6 @@ internal static partial class LauncherDiagnostics
         sb.AppendLine($"Selected runtime pack checked symbol count: {slot.RuntimePack.CheckedSymbolCount}");
         sb.AppendLine($"Selected runtime pack present symbol count: {slot.RuntimePack.PresentSymbolCount}");
         sb.AppendLine($"Selected runtime pack missing symbol count: {slot.RuntimePack.MissingSymbolCount}");
-        sb.AppendLine($"Selected runtime pack minimum launcher version: {ValueOrMissing(slot.RuntimePack.MinimumLauncherVersion)}");
     }
 
     private static void AppendRuntimeSlotSummary(StringBuilder sb, string dataDir, string branch, GameRuntimeSlot slot)

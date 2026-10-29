@@ -7,7 +7,7 @@ using System.Text.Json;
 namespace STS2Mobile.Launcher;
 internal sealed partial class RuntimePackManifest
 {
-    private RuntimePackManifest WithStatus(string status) => new(Path, ExpectedBranch, ExpectedGameIdentity, PackId, SourceBranch, InstallGeneration, SourcePckSha256, SourceAssemblySha256, GameIdentityId, AndroidAssemblySha256, PatchSetVersion, PatchValidationStatus, PatchValidationReport, ValidationMode, ValidationSurfaceVersion, SupportAssemblies, SupportAssemblySha256, SupportAssembliesDeclared, SupportAssemblySha256Declared, CheckedSymbolCount, PresentSymbolCount, MissingSymbolCount, MinimumLauncherVersion, GeneratedFromCleanDirectory, status, Exists, Readable, AndroidAssemblyExists, AndroidAssemblyPath, ActualAndroidAssemblySha256);
+    private RuntimePackManifest WithStatus(string status) => new(Path, ExpectedBranch, ExpectedGameIdentity, PackId, SourceBranch, InstallGeneration, SourcePckSha256, SourceAssemblySha256, GameIdentityId, AndroidAssemblySha256, PatchSetVersion, PatchValidationStatus, PatchValidationReport, ValidationMode, ValidationSurfaceVersion, SupportAssemblies, SupportAssemblySha256, SupportAssembliesDeclared, SupportAssemblySha256Declared, CheckedSymbolCount, PresentSymbolCount, MissingSymbolCount, GeneratedFromCleanDirectory, status, Exists, Readable, AndroidAssemblyExists, AndroidAssemblyPath, ActualAndroidAssemblySha256);
     private static string RuntimePackStatus(RuntimePackManifest manifest)
     {
         if (!manifest.Exists)

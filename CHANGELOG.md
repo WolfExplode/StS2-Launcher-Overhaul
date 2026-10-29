@@ -1,10 +1,11 @@
 # Changelog
 
-## 2026-10-29 - Failure reporting, Workshop marker and theme overrides
+## 2026-10-29 - Failure reporting, Workshop marker, theme overrides and manifest reading
 
 - Recording a Steam sign-in, connection or timeout failure no longer blocks the launcher while the sync status file is written. Before, it waited on the write on the main thread, including on any running sync that held the file. Callers now await the write, so it still completes before the next step.
 - Removed the Workshop consent marker file. It was written on Workshop update and deleted on removal, but nothing read it; the confirmation shown before each Workshop update is the consent. An existing `workshop_mods_accepted.txt` is left in place and is harmless.
 - Container spacing and margins are set through typed helpers (`LauncherThemeOverrides`) that only accept the container types that read them, so spacing set on the wrong kind of container no longer compiles. Converting all 44 spacing settings found no other case of this. Three copies of the `"separation"` constant are removed.
+- The runtime pack manifest is read only under the names the launcher writes. Before, each field was also accepted under up to three other spellings that no launcher in this repository's history wrote. A pack from an older launcher already fails the patch-set check, and only "usable" or "not usable" affects behaviour, so existing installs are treated the same. The never-written minimum launcher version, which diagnostics always reported as missing, is removed.
 - Checked by compiling against stubbed game types; not run.
 
 ## 2026-10-29 - Launch locks
