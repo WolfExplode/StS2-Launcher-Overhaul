@@ -28,15 +28,6 @@ internal sealed partial class ActionSection
         internal bool CanChange { get; set; }
     }
 
-    private void ShowModsControls()
-    {
-        // Selection and discovery are local state. Keep them available even when
-        // account, download, or mod loading state prevents a normal launch.
-        _modsGroup.Visible = true;
-        _workshopSyncButton.Visible = true;
-        _workshopClearButton.Visible = true;
-    }
-
     internal void SetModsPresentationChecking()
     {
         _modsLaunchSummaryLabel.Text = "Checking mod files...";

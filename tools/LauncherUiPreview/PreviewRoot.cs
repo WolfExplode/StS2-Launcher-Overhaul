@@ -270,8 +270,7 @@ public partial class PreviewRoot : Control
         {
             case "signed-out":
                 view.SetStatus("Sign in to continue.", LauncherStatusSeverity.Warning);
-                view.HideActions();
-                view.SetLoginFormVisible(visible: true, disabled: false);
+                view.ShowLoginForm(disabled: false);
                 break;
             case "guard":
                 view.SetStatus("Enter your Steam Guard code.", LauncherStatusSeverity.Warning);
@@ -328,7 +327,7 @@ public partial class PreviewRoot : Control
             )
         );
         view.SetStatus("Ready to play.", LauncherStatusSeverity.Ready);
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         view.SetModsPresentation(ReadyVanillaModsPresentation());
     }
 

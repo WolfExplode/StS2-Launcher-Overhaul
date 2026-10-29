@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-29 - Launcher UI logic cleanup
+
+- Home now moves between explicit stages (setup guide, sign-in, Steam Guard, download, ready, retry), and each stage sets every Home section and play action, replacing six copies of the same visibility steps.
+- The update button now follows the last check result, so showing the play actions again no longer turns "Update selected Steam branch" back into "Check for updates" while the version still reports an update. Finishing a check restores the button label.
+- Opening diagnostics now scrolls to the drawer instead of to the top of the page. Mods, version, and support tools are visible from startup, including when automatic repair runs first.
+- View callbacks are wired by name instead of 24 positional arguments. Removed the never-built compact workflow strip, the always-hidden status detail cue, unused overloads and styles, and redundant hide calls in the download and branch-switch flows.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test was extended but not run, because it needs the game's assemblies.
+
 ## 2026-10-26 - Documentation corrections
 
 - Correct mod loading results, first-time save copying, Safe Start synchronization and offline-launch requirements.

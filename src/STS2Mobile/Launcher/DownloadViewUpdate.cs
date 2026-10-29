@@ -11,8 +11,6 @@ internal readonly struct DownloadViewUpdate
         string resetDownloadButton = null,
         LaunchUpdateAction? launchAction = null,
         bool? downloadButtonDisabled = null,
-        bool hideActions = false,
-        bool hideDownload = false,
         bool showRetry = false,
         bool resetDownload = false
     )
@@ -25,8 +23,6 @@ internal readonly struct DownloadViewUpdate
         ResetDownloadButton = resetDownloadButton;
         LaunchAction = launchAction;
         DownloadButtonDisabled = downloadButtonDisabled;
-        HideActions = hideActions;
-        HideDownload = hideDownload;
         ShowRetry = showRetry;
         ResetDownload = resetDownload;
     }
@@ -39,8 +35,6 @@ internal readonly struct DownloadViewUpdate
     private string ResetDownloadButton { get; }
     private LaunchUpdateAction? LaunchAction { get; }
     private bool? DownloadButtonDisabled { get; }
-    private bool HideActions { get; }
-    private bool HideDownload { get; }
     private bool ShowRetry { get; }
     private bool ResetDownload { get; }
 
@@ -58,8 +52,7 @@ internal readonly struct DownloadViewUpdate
             statusSeverity: LauncherStatusSeverity.Warning,
             logMessage: LauncherDownloadCoordinator.RedownloadLogMessage,
             downloadAction: LauncherDownloadCoordinator.DownloadGameFilesButtonText,
-            downloadButtonDisabled: false,
-            hideActions: true
+            downloadButtonDisabled: false
         );
 
     internal static DownloadViewUpdate AutomaticRepairStarted()
@@ -68,8 +61,7 @@ internal readonly struct DownloadViewUpdate
             statusSeverity: LauncherStatusSeverity.Working,
             logMessage: LocalPckRepairOperation.ProgressMessage,
             downloadAction: LocalPckRepairOperation.ProgressMessage,
-            downloadProgress: LocalPckRepairOperation.ProgressMessage,
-            hideActions: true
+            downloadProgress: LocalPckRepairOperation.ProgressMessage
         );
 
     internal static DownloadViewUpdate Completed(
@@ -84,7 +76,6 @@ internal readonly struct DownloadViewUpdate
             statusSeverity: filesReady
                 ? LauncherStatusSeverity.Ready
                 : LauncherStatusSeverity.Error,
-            hideDownload: true,
             launchAction: filesReady
                 ? LaunchUpdateAction.Hidden
                 : (LaunchUpdateAction?)null,
@@ -107,11 +98,10 @@ internal readonly struct DownloadViewUpdate
             downloadButtonDisabled: false
         );
 
+    // Stage changes come first (download action, then progress) so the
+    // status, log, and button state below apply to the stage being shown.
     internal void Apply(LauncherView view, LauncherLaunchCoordinator launch)
     {
-        if (HideActions)
-            view.HideActions();
-
         if (DownloadAction != null)
             view.ShowDownloadAction(DownloadAction);
 
@@ -132,9 +122,6 @@ internal readonly struct DownloadViewUpdate
 
         if (LogMessage != null)
             view.AppendLog(LogMessage);
-
-        if (HideDownload)
-            view.HideDownload();
 
         if (ResetDownload)
             view.ResetDownload();

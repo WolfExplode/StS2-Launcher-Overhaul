@@ -56,7 +56,6 @@ internal sealed partial class LauncherDownloadCoordinator
         if (!LauncherGameFiles.HasBranchMetadataProblem(_model.DataDir, branch))
             return false;
 
-        _view.HideActions();
         _view.SetStatus(
             RedownloadRequiredStatus,
             LauncherStatusSeverity.Warning

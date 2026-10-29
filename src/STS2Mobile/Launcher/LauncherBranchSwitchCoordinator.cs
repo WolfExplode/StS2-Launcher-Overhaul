@@ -104,7 +104,6 @@ internal sealed class LauncherBranchSwitchCoordinator
                 ?? "Selected game version is not downloaded. Download game files to continue.",
             LauncherStatusSeverity.Warning
         );
-        _view.HideActions();
         _downloads.ShowDownloadReadyAction();
     }
 }

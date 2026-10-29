@@ -30,34 +30,27 @@ internal sealed partial class LauncherLaunchCoordinator
         LauncherStatusSeverity severity
     )
     {
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase: set status");
         _view.SetStatus(status, severity);
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase complete: set status");
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase: show launch actions");
         ShowLaunchActions(updateAction);
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase complete: show launch actions");
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase: previous launch warning");
         _diagnostics.ShowPreviousLaunchWarningIfNeeded();
-        STS2Mobile.PatchHelper.Log("[Launcher] Ready-to-launch UI phase complete: previous launch warning");
     }
 
     internal void ShowLaunchActions(LaunchUpdateAction updateAction)
     {
-        _view.ShowLaunchActions(
-            "Play",
-            updateAction == LaunchUpdateAction.Visible
-        );
+        _view.ShowLaunchActions(updateAction == LaunchUpdateAction.Visible);
     }
 
+    private const string ReadyToPlayStatus = "Ready to play. Runtime preparation is checked before launch.";
+
     internal string SelectedVersionReadyStatus(LauncherLaunchReadiness readiness)
-        => "Ready to play. Runtime preparation is checked before launch.";
+        => ReadyToPlayStatus;
 
     internal string SelectedVersionReadyStatus(string baseStatus, LauncherLaunchReadiness readiness)
     {
         var prefix = baseStatus?.Trim().TrimEnd('.');
         return string.IsNullOrWhiteSpace(prefix)
-            ? "Ready to play. Runtime preparation is checked before launch."
-            : $"{prefix}. Ready to play. Runtime preparation is checked before launch.";
+            ? ReadyToPlayStatus
+            : $"{prefix}. {ReadyToPlayStatus}";
     }
 
     internal LauncherLaunchReadiness RefreshSelectedRuntimeSlotEvidence()

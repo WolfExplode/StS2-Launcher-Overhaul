@@ -4,7 +4,6 @@ internal sealed partial class LauncherDownloadCoordinator
 {
     internal void UpdateSelectedVersionPressed()
     {
-        _view.HideActions();
         _view.ShowDownloadAction("Update selected Steam branch");
         DownloadPressed();
     }

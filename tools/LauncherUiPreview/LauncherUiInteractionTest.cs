@@ -80,7 +80,7 @@ internal static class LauncherUiInteractionTest
                     profile.ContentMaxWidth, profile.Mode, profile.TouchOptimized, profile.Compact, profile.CompactStackedActionRows,
                 });
                 var view = new LauncherView(root, profile);
-                view.ShowLaunchActions("Play", showUpdate: true);
+                view.ShowLaunchActions(showUpdate: true);
                 GD.Print($"MODS_SCROLL_TABLET_SCALE={scale}");
                 await AssertModsScrollAfterListGrowthAsync(view, root);
             }
@@ -227,7 +227,7 @@ internal static class LauncherUiInteractionTest
         Expect(events.ReportBug == 1, "GitHub bug report did not route exactly once.");
         Press(root, "Check for app updates");
         Expect(events.AppUpdate == 1, "App update check did not route exactly once.");
-        view.HideActions();
+        view.ShowSetupGuide();
         Press(root, "Mods");
         view.SetModsPresentation(VanillaDisabledPresentation());
         AssertModsPresentation(
@@ -257,7 +257,7 @@ internal static class LauncherUiInteractionTest
             enabled: true,
             "Loaded last launch"
         );
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         Press(root, "Home");
         // Visibility changes retain the observed presentation until the
         // controller supplies a fresh background result.
@@ -340,7 +340,7 @@ internal static class LauncherUiInteractionTest
             "Failed last launch"
         );
 
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         Press(root, "Home");
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
         var play = FindVisibleButton(root, "Play Vanilla");
@@ -648,6 +648,10 @@ internal static class LauncherUiInteractionTest
             "Update selected Steam branch"
         );
         _ = FindVisibleButton(root, "Update selected Steam branch");
+        // Showing the play actions again must keep the update result.
+        view.ShowLaunchActions(showUpdate: true);
+        view.SelectDestination(LauncherDestination.Versions);
+        _ = FindVisibleButton(root, "Update selected Steam branch");
         _ = FindUniqueVisibleNamed<Control>(root, "VersionsDestination");
         Press(root, "Update selected Steam branch");
         UpdateCheckViewUpdate.Completed(hasUpdate: false, "Public").Apply(view);
@@ -657,6 +661,12 @@ internal static class LauncherUiInteractionTest
             "SelectedGameVersionState",
             "Selected for Play · Installed on this device · Up to date"
         );
+        view.SetUpdateCheckBusy(true);
+        Expect(FindVisibleButton(root, "Checking...").Disabled,
+            "A running update check left the update action enabled.");
+        view.SetUpdateCheckBusy(false);
+        Expect(!FindVisibleButton(root, "Check for updates").Disabled,
+            "A finished update check did not restore the update action.");
 
         var betaIndex = Enumerable.Range(0, selector.ItemCount)
             .Single(index => string.Equals(
@@ -929,8 +939,7 @@ internal static class LauncherUiInteractionTest
         Expect(events.ProfileCopy == 1, "Profile copy callback was not invoked exactly once.");
         AssertSaveConfirmations(view, root);
         var syncToggle = FindUniqueVisibleNamed<CheckButton>(root, "SteamSaveSyncToggle");
-        var preferenceChanges = 0;
-        view.SaveSyncPreferenceChanged += () => preferenceChanges++;
+        var preferenceChangesBefore = events.SaveSyncPreferenceChanges;
         syncToggle.ButtonPressed = false;
         Expect(!STS2Mobile.Steam.SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
             "Turning off Steam save sync did not persist the preference.");
@@ -942,7 +951,7 @@ internal static class LauncherUiInteractionTest
         Expect(!FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
             "Disabling cloud sync disabled local profile copying.");
         syncToggle.ButtonPressed = true;
-        Expect(preferenceChanges == 2, "Sync preference changes did not reach the view.");
+        Expect(events.SaveSyncPreferenceChanges - preferenceChangesBefore == 2, "Sync preference changes did not reach the view.");
         view.SetSaveSyncPresentation(UpToDateSavePresentation());
     }
 
@@ -1164,7 +1173,7 @@ internal static class LauncherUiInteractionTest
         buttons[0].EmitSignal(Button.SignalName.Pressed);
 
         view.SetStatus("Game startup failed last time.", LauncherStatusSeverity.Warning);
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         view.ShowHomeHelpAction();
         home = FindUniqueVisibleNamed<Control>(root, "HomeDestination");
         buttons = Descendants<Button>(home)
@@ -1188,7 +1197,7 @@ internal static class LauncherUiInteractionTest
         _ = FindUniqueVisibleNamed<Control>(root, "HelpDestination");
 
         view.SetStatus("Ready to play.", LauncherStatusSeverity.Ready);
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
     }
 
@@ -1733,36 +1742,38 @@ internal static class LauncherUiInteractionTest
         Action<string> gameBranchChanged
     )
     {
-        view.WireEvents(
-            loginRequested: (_, _) => { },
-            codeSubmitted: _ => { },
-            downloadRequested: () => { },
-            gameBranchChanged: gameBranchChanged,
-            rendererModeChanged: mode => events.RendererModes.Add(mode),
-            launchPressed: () => events.Launch++,
-            retryPressed: () => events.Retry++,
-            checkForUpdatesPressed: () => events.CheckForUpdates++,
-            updateSelectedVersionPressed: () => events.UpdateSelectedVersion++,
-            refreshGameVersionsPressed: () => events.RefreshVersions++,
-            redownloadPressed: () => events.Redownload++,
-            diagnosticsPressed: () => events.Diagnostics++,
-            showLastErrorPressed: () => events.ShowLastError++,
-            copyRawLogPressed: () => events.CopyRawLog++,
-            safeLaunchPressed: () => events.SafeLaunch++,
-            saveSyncNowPressed: () => events.SaveSyncNow++,
-            savePullPressed: () => events.SaveGet++,
-            savePushPressed: () => events.SaveSend++,
-            workshopSyncPressed: () => { },
-            workshopClearPressed: () =>
+        view.WireEvents(new LauncherViewHandlers
+        {
+            LoginRequested = (_, _) => { },
+            CodeSubmitted = _ => { },
+            DownloadRequested = () => { },
+            GameBranchChanged = gameBranchChanged,
+            RendererModeChanged = mode => events.RendererModes.Add(mode),
+            LaunchPressed = () => events.Launch++,
+            SafeLaunchPressed = () => events.SafeLaunch++,
+            RetryPressed = () => events.Retry++,
+            CheckForUpdatesPressed = () => events.CheckForUpdates++,
+            UpdateSelectedVersionPressed = () => events.UpdateSelectedVersion++,
+            RefreshGameVersionsPressed = () => events.RefreshVersions++,
+            RedownloadPressed = () => events.Redownload++,
+            DiagnosticsPressed = () => events.Diagnostics++,
+            ShowLastErrorPressed = () => events.ShowLastError++,
+            CopyRawLogPressed = () => events.CopyRawLog++,
+            ReportBugPressed = () => events.ReportBug++,
+            CheckAppUpdatesPressed = () => events.AppUpdate++,
+            SaveSyncNowPressed = () => events.SaveSyncNow++,
+            SavePullPressed = () => events.SaveGet++,
+            SavePushPressed = () => events.SaveSend++,
+            SaveSyncPreferenceChanged = () => events.SaveSyncPreferenceChanges++,
+            CopyVanillaToModdedPressed = () => events.ProfileCopy++,
+            WorkshopSyncPressed = () => { },
+            WorkshopClearPressed = () =>
                 LauncherWorkshopCoordinator.ShowRemoveDownloadedModsConfirmation(
                     view,
                     () => events.WorkshopRemove++
                 ),
-            modsSelectionChanged: () => events.ModsSelectionChanged++,
-            reportBugPressed: () => events.ReportBug++,
-            checkAppUpdatesPressed: () => events.AppUpdate++,
-            copyVanillaToModdedPressed: () => events.ProfileCopy++
-        );
+            ModsSelectionChanged = () => events.ModsSelectionChanged++,
+        });
     }
 
     private sealed class EventCounts
@@ -1786,5 +1797,6 @@ internal static class LauncherUiInteractionTest
         internal readonly List<string> RendererModes = new();
         internal int WorkshopRemove;
         internal int ModsSelectionChanged;
+        internal int SaveSyncPreferenceChanges;
     }
 }

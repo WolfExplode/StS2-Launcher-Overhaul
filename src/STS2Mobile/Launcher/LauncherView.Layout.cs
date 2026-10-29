@@ -193,14 +193,6 @@ internal sealed partial class LauncherView
     private static LauncherViewPrimaryColumn BuildPrimaryColumn(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
-        Button compactCurrentTaskButton = null;
-        GridContainer compactStickyTaskHeader = null;
-        Control compactWorkflowStrip = null;
-        var workflowStepNumberLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepDetailLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepAccents = Array.Empty<ColorRect>();
-        var workflowStepButtons = Array.Empty<Button>();
         var primaryBody = BuildPrimaryColumnBody(profile, root);
         var left = primaryBody.Body;
         var status = BuildPrimaryStatus(profile);
@@ -223,16 +215,17 @@ internal sealed partial class LauncherView
         homeSections.AddChild(download);
         var actions = new ActionSection(scale, profile.Compact, profile.CompactStackedActionRows);
         left.AddChild(actions);
-        VBoxContainer compactDiagnosticsHost = null;
-        if (profile.Compact)
-        {
-            compactDiagnosticsHost = new VBoxContainer();
-            compactDiagnosticsHost.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            compactDiagnosticsHost.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation, scale));
-            left.AddChild(compactDiagnosticsHost);
-        }
-
-        return new LauncherViewPrimaryColumn(status.Phase, status.Message, status.Capsule, secondaryStatus.Banner, secondaryStatus.Severity, secondaryStatus.Message, secondaryStatus.Accent, status.CompactDetailButton, status.CompactDetailCue, status.Accent, workflowStepNumberLabels, workflowStepLabels, workflowStepDetailLabels, workflowStepAccents, workflowStepButtons, compactStickyTaskHeader, compactWorkflowStrip, compactCurrentTaskButton, primaryBody.PrimaryScroll, homeSections, firstRunGuide, login, code, download, actions, compactDiagnosticsHost);
+        return new LauncherViewPrimaryColumn(
+            Status: status,
+            SecondaryStatus: secondaryStatus,
+            PrimaryScroll: primaryBody.PrimaryScroll,
+            HomeSections: homeSections,
+            FirstRunGuide: firstRunGuide,
+            Login: login,
+            Code: code,
+            Download: download,
+            Actions: actions
+        );
     }
 
     private static LauncherViewPrimaryStatus BuildPrimaryStatus(LauncherLayoutProfile profile)
@@ -250,15 +243,8 @@ internal sealed partial class LauncherView
         var statusAccent = new ColorRect();
         statusAccent.Color = LauncherPortalStatusFormatter.ColorFor(initialSeverity);
         var statusCapsule = BuildStatusCapsule(statusPhaseLabel, statusLabel, statusAccent, profile);
-        return new LauncherViewPrimaryStatus(statusPhaseLabel, statusLabel, statusAccent, statusCapsule.Capsule, statusCapsule.CompactDetailButton, statusCapsule.CompactDetailCue);
+        return new LauncherViewPrimaryStatus(statusPhaseLabel, statusLabel, statusAccent, statusCapsule.Capsule, statusCapsule.CompactDetailButton);
     }
-
-    private const int CompactBottomScrollSpacerHeight = 180;
-    private static Control BuildCompactBottomScrollSpacer(float scale) => new Control
-    {
-        CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(CompactBottomScrollSpacerHeight, scale)),
-        MouseFilter = Control.MouseFilterEnum.Ignore,
-    };
 }
 
 internal readonly struct LauncherViewPrimaryBody
@@ -273,82 +259,23 @@ internal readonly struct LauncherViewPrimaryBody
     internal VBoxContainer Body { get; }
 }
 
-internal readonly struct LauncherViewPrimaryColumn
-{
-    internal LauncherViewPrimaryColumn(StyledLabel statusPhase, StyledLabel status, Control statusCapsule, Control secondaryStatusBanner, StyledLabel secondaryStatusSeverity, StyledLabel secondaryStatusMessage, ColorRect secondaryStatusAccent, Button compactStatusDetailsButton, StyledLabel compactStatusDetailsCue, ColorRect statusAccent, StyledLabel[] workflowStepNumberLabels, StyledLabel[] workflowStepLabels, StyledLabel[] workflowStepDetailLabels, ColorRect[] workflowStepAccents, Button[] workflowStepButtons, GridContainer compactStickyTaskHeader, Control compactWorkflowStrip, Button compactCurrentTaskButton, ScrollContainer primaryScroll, VBoxContainer homeSections, Control firstRunGuide, LoginSection login, CodeSection code, DownloadSection download, ActionSection actions, VBoxContainer compactDiagnosticsHost)
-    {
-        StatusPhase = statusPhase;
-        Status = status;
-        StatusCapsule = statusCapsule;
-        SecondaryStatusBanner = secondaryStatusBanner;
-        SecondaryStatusSeverity = secondaryStatusSeverity;
-        SecondaryStatusMessage = secondaryStatusMessage;
-        SecondaryStatusAccent = secondaryStatusAccent;
-        CompactStatusDetailsButton = compactStatusDetailsButton;
-        CompactStatusDetailsCue = compactStatusDetailsCue;
-        StatusAccent = statusAccent;
-        WorkflowStepNumberLabels = workflowStepNumberLabels;
-        WorkflowStepLabels = workflowStepLabels;
-        WorkflowStepDetailLabels = workflowStepDetailLabels;
-        WorkflowStepAccents = workflowStepAccents;
-        WorkflowStepButtons = workflowStepButtons;
-        CompactStickyTaskHeader = compactStickyTaskHeader;
-        CompactWorkflowStrip = compactWorkflowStrip;
-        CompactCurrentTaskButton = compactCurrentTaskButton;
-        PrimaryScroll = primaryScroll;
-        HomeSections = homeSections;
-        FirstRunGuide = firstRunGuide;
-        Login = login;
-        Code = code;
-        Download = download;
-        Actions = actions;
-        CompactDiagnosticsHost = compactDiagnosticsHost;
-    }
+internal readonly record struct LauncherViewPrimaryColumn(
+    LauncherViewPrimaryStatus Status,
+    LauncherViewSecondaryStatus SecondaryStatus,
+    ScrollContainer PrimaryScroll,
+    VBoxContainer HomeSections,
+    Control FirstRunGuide,
+    LoginSection Login,
+    CodeSection Code,
+    DownloadSection Download,
+    ActionSection Actions
+);
 
-    internal StyledLabel StatusPhase { get; }
-    internal StyledLabel Status { get; }
-    internal Control StatusCapsule { get; }
-    internal Control SecondaryStatusBanner { get; }
-    internal StyledLabel SecondaryStatusSeverity { get; }
-    internal StyledLabel SecondaryStatusMessage { get; }
-    internal ColorRect SecondaryStatusAccent { get; }
-    internal Button CompactStatusDetailsButton { get; }
-    internal StyledLabel CompactStatusDetailsCue { get; }
-    internal ColorRect StatusAccent { get; }
-    internal StyledLabel[] WorkflowStepNumberLabels { get; }
-    internal StyledLabel[] WorkflowStepLabels { get; }
-    internal StyledLabel[] WorkflowStepDetailLabels { get; }
-    internal ColorRect[] WorkflowStepAccents { get; }
-    internal Button[] WorkflowStepButtons { get; }
-    internal GridContainer CompactStickyTaskHeader { get; }
-    internal Control CompactWorkflowStrip { get; }
-    internal Button CompactCurrentTaskButton { get; }
-    internal ScrollContainer PrimaryScroll { get; }
-    internal VBoxContainer HomeSections { get; }
-    internal Control FirstRunGuide { get; }
-    internal LoginSection Login { get; }
-    internal CodeSection Code { get; }
-    internal DownloadSection Download { get; }
-    internal ActionSection Actions { get; }
-    internal VBoxContainer CompactDiagnosticsHost { get; }
-}
-
-internal readonly struct LauncherViewPrimaryStatus
-{
-    internal LauncherViewPrimaryStatus(StyledLabel phase, StyledLabel message, ColorRect accent, Control capsule, Button compactDetailButton, StyledLabel compactDetailCue)
-    {
-        Phase = phase;
-        Message = message;
-        Accent = accent;
-        Capsule = capsule;
-        CompactDetailButton = compactDetailButton;
-        CompactDetailCue = compactDetailCue;
-    }
-
-    internal StyledLabel Phase { get; }
-    internal StyledLabel Message { get; }
-    internal ColorRect Accent { get; }
-    internal Control Capsule { get; }
-    internal Button CompactDetailButton { get; }
-    internal StyledLabel CompactDetailCue { get; }
-}
+// CompactDetailButton is null outside the compact layout.
+internal readonly record struct LauncherViewPrimaryStatus(
+    StyledLabel Phase,
+    StyledLabel Message,
+    ColorRect Accent,
+    Control Capsule,
+    Button CompactDetailButton
+);

@@ -5,10 +5,7 @@ namespace STS2Mobile.Launcher;
 
 internal static class LauncherViewLayoutMetrics
 {
-    internal const float LogColumnStretchRatio = 3f;
-    internal const float PrimaryColumnStretchRatio = 2f;
     internal const int LogTitleFontSize = 14;
-    internal const int PrimaryColumnMinWidth = 420;
     internal const int CompactPrimaryColumnSeparation = 8;
     internal const int CompactRootColumnSeparation = 8;
     internal const int PrimaryColumnSeparation = 10;

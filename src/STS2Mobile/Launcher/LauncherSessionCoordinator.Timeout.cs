@@ -100,9 +100,6 @@ internal sealed partial class LauncherSessionCoordinator
             if (_logMessage != null)
                 view.AppendLog(_logMessage);
 
-            if (_launchAction.HasValue && _readiness == null)
-                launch.ShowLaunchActions(_launchAction.Value);
-
             if (_showRetry)
                 view.ShowRetry();
         }

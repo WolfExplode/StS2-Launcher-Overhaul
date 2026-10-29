@@ -20,16 +20,16 @@ internal sealed partial class LauncherView
         _compactStatusFullMessage = fullMessage;
         _currentStatusSeverity = severity;
         _compactStatusExpanded = ShouldAutoExpandCompactStatusDetails(severity);
-        _statusPhaseLabel.Text = label;
-        _statusPhaseLabel.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, color);
-        _statusAccent.Color = color;
-        _statusLabel.Text = _compactStatusExpanded ? fullMessage : message;
-        _statusLabel.TooltipText = fullMessage;
-        _secondaryStatusSeverityLabel.Text = label;
-        _secondaryStatusSeverityLabel.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, color);
-        _secondaryStatusMessageLabel.Text = fullMessage;
-        _secondaryStatusMessageLabel.TooltipText = fullMessage;
-        _secondaryStatusAccent.Color = color;
+        _status.Phase.Text = label;
+        _status.Phase.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, color);
+        _status.Accent.Color = color;
+        _status.Message.Text = _compactStatusExpanded ? fullMessage : message;
+        _status.Message.TooltipText = fullMessage;
+        _secondaryStatus.Severity.Text = label;
+        _secondaryStatus.Severity.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, color);
+        _secondaryStatus.Message.Text = fullMessage;
+        _secondaryStatus.Message.TooltipText = fullMessage;
+        _secondaryStatus.Accent.Color = color;
         UpdateStatusVisibility();
         if (_profile.Compact)
         {
@@ -41,7 +41,7 @@ internal sealed partial class LauncherView
     {
         if (!_profile.Compact)
             return;
-        _compactStatusDetailsButton.Pressed += ToggleCompactStatusDetails;
+        _status.CompactDetailButton.Pressed += ToggleCompactStatusDetails;
     }
 
     private void ToggleCompactStatusDetails()
@@ -53,7 +53,7 @@ internal sealed partial class LauncherView
 
         _parent.GetViewport()?.GuiReleaseFocus();
         _compactStatusExpanded = !_compactStatusExpanded;
-        _statusLabel.Text = _compactStatusExpanded ? _compactStatusFullMessage : _compactStatusShortMessage;
+        _status.Message.Text = _compactStatusExpanded ? _compactStatusFullMessage : _compactStatusShortMessage;
         ApplyCompactStatusDetailLayout();
     }
 
@@ -61,15 +61,13 @@ internal sealed partial class LauncherView
     {
         var hasFullDetails = !string.Equals(_compactStatusShortMessage, _compactStatusFullMessage, StringComparison.Ordinal);
         var expanded = _compactStatusExpanded;
-        _statusLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        _statusLabel.ClipText = false;
-        _compactStatusDetailsButton.Visible = hasFullDetails;
-        _compactStatusDetailsButton.Text = expanded ? "Hide details" : "Show details";
-        _compactStatusDetailsButton.AccessibilityName = _compactStatusDetailsButton.Text;
-        _compactStatusDetailsButton.Disabled = !hasFullDetails;
-        _compactStatusDetailsButton.MouseDefaultCursorShape = hasFullDetails ? Control.CursorShape.PointingHand : Control.CursorShape.Arrow;
-        _compactStatusDetailsCueLabel.Visible = false;
-        _compactStatusDetailsCueLabel.Text = expanded ? "Hide" : "Details";
+        _status.Message.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        _status.Message.ClipText = false;
+        _status.CompactDetailButton.Visible = hasFullDetails;
+        _status.CompactDetailButton.Text = expanded ? "Hide details" : "Show details";
+        _status.CompactDetailButton.AccessibilityName = _status.CompactDetailButton.Text;
+        _status.CompactDetailButton.Disabled = !hasFullDetails;
+        _status.CompactDetailButton.MouseDefaultCursorShape = hasFullDetails ? Control.CursorShape.PointingHand : Control.CursorShape.Arrow;
     }
 
     private static bool ShouldAutoExpandCompactStatusDetails(LauncherStatusSeverity severity) => severity is LauncherStatusSeverity.Warning or LauncherStatusSeverity.Error;
@@ -77,8 +75,8 @@ internal sealed partial class LauncherView
     {
         var home = _destination == LauncherDestination.Home;
         var needsAttention = _currentStatusSeverity is LauncherStatusSeverity.Working or LauncherStatusSeverity.Warning or LauncherStatusSeverity.Error;
-        _statusCapsule.Visible = home && needsAttention;
-        _secondaryStatusBanner.Visible = !home && needsAttention;
+        _status.Capsule.Visible = home && needsAttention;
+        _secondaryStatus.Banner.Visible = !home && needsAttention;
     }
 
     private static LauncherViewSecondaryStatus BuildSecondaryStatusBanner(LauncherLayoutProfile profile)
@@ -126,7 +124,7 @@ internal sealed partial class LauncherView
         return new LauncherViewSecondaryStatus(panel, severity, message, accent);
     }
 
-    private static (Control Capsule, Button CompactDetailButton, StyledLabel CompactDetailCue) BuildCompactStatusCapsule(StyledLabel statusPhaseLabel, StyledLabel statusLabel, ColorRect statusAccent, LauncherLayoutProfile profile)
+    private static (Control Capsule, Button CompactDetailButton) BuildCompactStatusCapsule(StyledLabel statusPhaseLabel, StyledLabel statusLabel, ColorRect statusAccent, LauncherLayoutProfile profile)
     {
         var scale = profile.Scale;
         var panel = new PanelContainer();
@@ -158,26 +156,19 @@ internal sealed partial class LauncherView
         statusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         statusLabel.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         body.AddChild(statusLabel);
-        var detailCue = BuildCompactStatusDetailCue(scale);
-        detailCue.Visible = false;
-        body.AddChild(detailCue);
         body.AddChild(detailButton);
-        return (panel, detailButton, detailCue);
+        return (panel, detailButton);
     }
 
     private const int CompactStatusBodySeparation = 5;
     private const int CompactStatusAccentHeight = 3;
     private const int CompactStatusPhaseHorizontalMargin = 7;
     private const int CompactStatusPhaseVerticalMargin = 3;
-    private const int CompactStatusActionMinHeight = 24;
     private const int CompactStatusDetailHeight = 44;
-    private const int CompactStatusDetailCueWidth = 62;
-    private const int CompactStatusDetailCueFontSize = LauncherSectionMetrics.CompactDetailLabelFontSize;
     private const int CompactStatusDetailHorizontalMargin = 8;
     private const int CompactStatusDetailVerticalMargin = 5;
-    private const int CompactStatusDetailRowGap = 6;
     private const int CompactStatusDetailRadius = 7;
-    private static (Control Capsule, Button CompactDetailButton, StyledLabel CompactDetailCue) BuildStatusCapsule(StyledLabel statusPhaseLabel, StyledLabel statusLabel, ColorRect statusAccent, LauncherLayoutProfile profile)
+    private static (Control Capsule, Button CompactDetailButton) BuildStatusCapsule(StyledLabel statusPhaseLabel, StyledLabel statusLabel, ColorRect statusAccent, LauncherLayoutProfile profile)
     {
         var scale = profile.Scale;
         if (profile.Compact)
@@ -204,7 +195,7 @@ internal sealed partial class LauncherView
         body.AddChild(phasePanel);
         statusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         body.AddChild(statusLabel);
-        return (panel, null, null);
+        return (panel, null);
     }
 
     private static Button BuildCompactStatusDetailButton(float scale)
@@ -220,42 +211,6 @@ internal sealed partial class LauncherView
         };
         ApplyCompactStatusDetailButtonStyle(button, scale);
         return button;
-    }
-
-    private static HBoxContainer BuildCompactStatusDetailRow(StyledLabel statusLabel, float scale)
-    {
-        var detailRow = new HBoxContainer
-        {
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
-        detailRow.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        detailRow.OffsetLeft = LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailHorizontalMargin, scale);
-        detailRow.OffsetRight = -LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailHorizontalMargin, scale);
-        detailRow.OffsetTop = LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailVerticalMargin, scale);
-        detailRow.OffsetBottom = -LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailVerticalMargin, scale);
-        detailRow.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailRowGap, scale));
-        statusLabel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        statusLabel.HorizontalAlignment = HorizontalAlignment.Left;
-        statusLabel.VerticalAlignment = VerticalAlignment.Center;
-        statusLabel.MouseFilter = Control.MouseFilterEnum.Ignore;
-        statusLabel.AutowrapMode = TextServer.AutowrapMode.Off;
-        statusLabel.ClipText = true;
-        statusLabel.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        detailRow.AddChild(statusLabel);
-        return detailRow;
-    }
-
-    private static StyledLabel BuildCompactStatusDetailCue(float scale)
-    {
-        var detailCue = new StyledLabel("Details", scale, fontSize: CompactStatusDetailCueFontSize, align: HorizontalAlignment.Center);
-        detailCue.CustomMinimumSize = new Vector2(LauncherViewLayoutMetrics.ScaleInt(CompactStatusDetailCueWidth, scale), 0);
-        detailCue.VerticalAlignment = VerticalAlignment.Center;
-        detailCue.MouseFilter = Control.MouseFilterEnum.Ignore;
-        detailCue.ClipText = true;
-        detailCue.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        detailCue.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.CyanAccent);
-        return detailCue;
     }
 
     private static void ApplyCompactStatusDetailButtonStyle(Button button, float scale)

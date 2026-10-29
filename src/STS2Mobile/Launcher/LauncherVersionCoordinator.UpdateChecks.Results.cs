@@ -2,14 +2,13 @@ namespace STS2Mobile.Launcher;
 
 internal sealed partial class LauncherVersionCoordinator
 {
+    // Refreshing the branch options clears the previous check outcome, so a
+    // result for a branch that is no longer selected leaves "Check for updates".
     internal void CompleteUpdateCheck(LauncherUpdateCheckResult result)
     {
         RefreshGameBranchOptions();
         if (!IsCurrentSelection(result.Branch))
         {
-            _view.SetVersionPrimaryAction(
-                LauncherVersionPrimaryAction.CheckForUpdates
-            );
             _view.AppendLog(
                 "Ignored an update result for a game version that is no longer selected."
             );
@@ -25,12 +24,7 @@ internal sealed partial class LauncherVersionCoordinator
     {
         RefreshGameBranchOptions();
         if (!IsCurrentSelection(failure.Branch))
-        {
-            _view.SetVersionPrimaryAction(
-                LauncherVersionPrimaryAction.CheckForUpdates
-            );
             return;
-        }
         UpdateCheckViewUpdate.Failed(
             LauncherBranchAvailabilityStatus.CompactFailureMessage(_model.DataDir, failure.Message),
             STS2Mobile.Steam.SteamGameBranch.DisplayName(failure.Branch)

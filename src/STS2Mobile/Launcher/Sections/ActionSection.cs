@@ -30,7 +30,6 @@ internal sealed partial class ActionSection : VBoxContainer
     internal event Action WorkshopSyncPressed;
     internal event Action WorkshopClearPressed;
     internal event Action ModsSelectionChanged;
-    internal event Action HomeHelpPressed;
     private readonly Button _launchButton;
     private readonly Button _safeLaunchButton;
     private readonly VBoxContainer _homeJourney;
@@ -89,8 +88,8 @@ internal sealed partial class ActionSection : VBoxContainer
     private string _homeSyncState = "Not synced yet";
     private string _gameBranch = SteamGameBranch.Public;
     private bool _selectedVersionInstalled;
-    private LauncherVersionPrimaryAction _versionPrimaryAction = LauncherVersionPrimaryAction.CheckForUpdates;
     private LauncherVersionCheckOutcome _versionCheckOutcome;
+    private bool _updateCheckBusy;
     private string _rendererMode = LauncherRendererMode.Auto;
     private void UpdateVersionActionAvailability()
     {
@@ -99,30 +98,41 @@ internal sealed partial class ActionSection : VBoxContainer
             _versionMaintenanceGroup.Visible = _redownloadButton.Visible;
     }
 
-    internal void SetUpdateButtonText(string text) => SetCompactActionButtonText(_updateButton, text);
-    internal void SetVersionPrimaryAction(LauncherVersionPrimaryAction action)
-    {
-        _versionPrimaryAction = action;
-        SetCompactActionButtonText(_updateButton, action == LauncherVersionPrimaryAction.UpdateSelectedVersion ? "Update selected Steam branch" : "Check for updates");
-        _updateButton.AccessibilityName = action == LauncherVersionPrimaryAction.UpdateSelectedVersion ? "Update selected Steam branch" : "Check for updates";
-    }
-
-    internal void SetVersionSelectionDisabled(bool disabled) => _branchDropdown.Disabled = disabled;
     internal void SetVersionCheckOutcome(LauncherVersionCheckOutcome outcome)
     {
         _versionCheckOutcome = outcome;
+        ApplyVersionCheckPresentation();
+    }
+
+    internal void SetUpdateCheckBusy(bool busy)
+    {
+        _updateCheckBusy = busy;
+        if (busy)
+            _versionCheckOutcome = LauncherVersionCheckOutcome.None;
+        ApplyVersionCheckPresentation();
+    }
+
+    private bool UpdateAvailable => _versionCheckOutcome == LauncherVersionCheckOutcome.UpdateAvailable;
+
+    // The update button's action follows the last check result for the
+    // selected version, so the label, the help text, and the press agree.
+    private void ApplyVersionCheckPresentation()
+    {
+        var actionText = UpdateAvailable ? "Update selected Steam branch" : "Check for updates";
+        SetCompactActionButtonText(_updateButton, _updateCheckBusy ? "Checking..." : actionText);
+        _updateButton.Disabled = _updateCheckBusy;
+        _branchDropdown.Disabled = _updateCheckBusy;
         UpdateBranchHelpText();
     }
 
     private void InvokeVersionPrimaryAction()
     {
-        if (_versionPrimaryAction == LauncherVersionPrimaryAction.UpdateSelectedVersion)
+        if (UpdateAvailable)
             UpdateSelectedVersionPressed?.Invoke();
         else
             CheckForUpdatesPressed?.Invoke();
     }
 
-    internal void SetUpdateButtonDisabled(bool disabled) => _updateButton.Disabled = disabled;
     internal void SetRefreshVersionsButtonDisabled(bool disabled) => _refreshVersionsButton.Disabled = disabled;
     internal void SetWorkshopButtonsDisabled(bool disabled)
     {
@@ -217,7 +227,7 @@ internal sealed partial class ActionSection : VBoxContainer
         _scale = scale;
         _compact = compact;
         _compactStackedActionRows = compactStackedActionRows;
-        LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Play", "Launch the game, choose a version, and manage mods.", LauncherComponentTheme.OrangeHot, compact, "Play safely");
+        var sectionHeader = LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Play", "Launch the game, choose a version, and manage mods.", LauncherComponentTheme.OrangeHot, compact, "Play safely");
         var toggleRadius = (int)(10 * scale);
         var toggleBorderWidth = Math.Max(1, (int)(2 * scale));
         _toggleOffStyle = LauncherStyleBoxes.MakeOutline(LauncherComponentTheme.ButtonHover, toggleRadius, toggleBorderWidth);
@@ -270,7 +280,7 @@ internal sealed partial class ActionSection : VBoxContainer
         _showLastErrorButton = supportControls.ShowLastErrorButton;
         _copyRawLogButton = supportControls.CopyRawLogButton;
         SetGameBranch(_gameBranch);
-        BuildDestinationLayout();
+        BuildDestinationLayout(sectionHeader);
         supportToolsParent.QueueFree();
     }
 

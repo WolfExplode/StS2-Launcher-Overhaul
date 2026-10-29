@@ -19,7 +19,7 @@ internal sealed partial class ActionSection
         };
         stateLine.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(stateLine);
-        var helpButton = AddSecondaryHiddenButton(group, "Open Help", scale, () => HomeHelpPressed?.Invoke());
+        var helpButton = AddSecondaryHiddenButton(group, "Open Help", scale, () => HomeDestinationPressed?.Invoke(LauncherDestination.Help));
         helpButton.AccessibilityName = "Open Help";
         LauncherButtonStyles.ApplySupportAction(helpButton, scale);
         return (group, stateLine, helpButton);
@@ -33,10 +33,10 @@ internal sealed partial class ActionSection
     }
 
     private static string PresentationText(string value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-    internal void ShowHomeHelpAction() => _homeHelpButton.Visible = true;
-    private void BuildDestinationLayout()
+    private void BuildDestinationLayout(Control sectionHeader)
     {
-        GetChild<Control>(0).Visible = false;
+        // Each destination carries its own heading.
+        sectionHeader.Visible = false;
         _homeDestination = BuildDestination("Home", LauncherComponentTheme.OrangeAccent);
         _savesDestination = BuildDestination("Saves", new Color(0.25f, 0.65f, 0.75f));
         _versionsDestination = BuildDestination("Versions", LauncherComponentTheme.CyanAccent);
@@ -68,6 +68,15 @@ internal sealed partial class ActionSection
         appUpdate.Pressed += () => CheckAppUpdatesPressed?.Invoke();
         _helpDestination.AddChild(appUpdate);
         _helpDestination.AddChild(BuildHelpDiagnosticsGroup());
+        // Destination tools work without a signed-in session or an installed
+        // version, so they stay visible. Only the play actions and the
+        // install-dependent redownload change with launcher state.
+        _modsGroup.Visible = true;
+        _refreshVersionsButton.Visible = true;
+        _diagnosticsButton.Visible = true;
+        _showLastErrorButton.Visible = true;
+        _copyRawLogButton.Visible = true;
+        UpdateVersionActionAvailability();
         Visible = true;
         SetDestination(LauncherDestination.Home);
     }
@@ -153,16 +162,6 @@ internal sealed partial class ActionSection
         return group;
     }
 
-    private void UpdateVersionMaintenanceVisibility()
-    {
-        if (_versionMaintenanceGroup == null)
-            return;
-        _refreshVersionsButton.Visible = true;
-        _versionSelectionGroup.Visible = true;
-        _versionMaintenanceGroup.Visible = true;
-        UpdateVersionActionAvailability();
-    }
-
     private VBoxContainer BuildDestination(string title, Color accent)
     {
         var destination = new VBoxContainer
@@ -216,7 +215,7 @@ internal sealed partial class ActionSection
 
     private void ApplyDestinationVisibility()
     {
-        _homeDestination.Visible = _destination == LauncherDestination.Home && (_launchButton.Visible || _retryButton.Visible);
+        _homeDestination.Visible = _destination == LauncherDestination.Home && _playActions != PlayActions.Hidden;
         _savesDestination.Visible = _destination == LauncherDestination.Saves;
         _versionsDestination.Visible = _destination == LauncherDestination.Versions;
         _modsDestination.Visible = _destination == LauncherDestination.Mods;

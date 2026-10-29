@@ -7,33 +7,20 @@ namespace STS2Mobile.Launcher.Sections;
 internal sealed partial class ActionSection
 {
     internal void SetGameBranch(string branch)
-    {
-        var selection = LauncherBranchDropdown.NormalizeSelection(_gameBranch, branch);
-        _gameBranch = selection.Branch;
-        _versionCheckOutcome = LauncherVersionCheckOutcome.None;
-        SetVersionPrimaryAction(LauncherVersionPrimaryAction.CheckForUpdates);
-        UpdateHomeStateLine();
-        PopulateBranchDropdown();
-        UpdateBranchHelpText();
-    }
+        => SetGameBranchOptions(branch, _availableBranches);
 
     internal void SetAvailableBranches(IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
-    {
-        _versionCheckOutcome = LauncherVersionCheckOutcome.None;
-        _availableBranches = LauncherBranchDropdown.NormalizeAvailableBranches(branches);
-        PopulateBranchDropdown();
-        UpdateBranchHelpText();
-    }
+        => SetGameBranchOptions(_gameBranch, branches);
 
+    // A new selection or a refreshed branch list invalidates the last update
+    // check, which described the previous state.
     internal void SetGameBranchOptions(string branch, IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
     {
-        _gameBranch = LauncherBranchDropdown.NormalizeSelection(_gameBranch, branch).Branch;
-        _versionCheckOutcome = LauncherVersionCheckOutcome.None;
-        SetVersionPrimaryAction(LauncherVersionPrimaryAction.CheckForUpdates);
-        UpdateHomeStateLine();
+        _gameBranch = SteamGameBranch.Normalize(branch);
         _availableBranches = LauncherBranchDropdown.NormalizeAvailableBranches(branches);
+        UpdateHomeStateLine();
         PopulateBranchDropdown();
-        UpdateBranchHelpText();
+        SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
     }
 
     private void ApplyGameBranch(long index)
