@@ -23,6 +23,7 @@ internal sealed partial class LauncherSessionCoordinator
         if (_model.ShouldIgnoreConnectionTimeout(sessionAttemptId))
             return;
 
+        await SaveSyncService.ReportFailureAsync(SaveSyncService.SyncFailureKind.Other);
         var outcome = CreateConnectionTimeoutOutcome();
         _runOnMainThread(() => outcome.Apply(_view, _launch));
     }
@@ -80,10 +81,6 @@ internal sealed partial class LauncherSessionCoordinator
 
         internal void Apply(LauncherView view, LauncherLaunchCoordinator launch)
         {
-            SaveSyncService.ReportFailure(
-                SaveSyncService.SyncFailureKind.Other
-            );
-
             if (_readiness != null && _launchAction.HasValue)
             {
                 launch.ShowReadyToLaunch(

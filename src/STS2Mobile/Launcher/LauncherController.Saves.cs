@@ -147,7 +147,7 @@ internal sealed partial class LauncherController
             PatchHelper.Log(
                 $"[Cloud] Manual synchronization task failed: {ex.GetType().Name}"
             );
-            SaveSyncService.ReportFailure(SaveSyncService.SyncFailureKind.Other);
+            await SaveSyncService.ReportFailureAsync(SaveSyncService.SyncFailureKind.Other).ConfigureAwait(false);
             result = default;
         }
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 - Failure reporting and Workshop marker
+
+- Recording a Steam sign-in, connection or timeout failure no longer blocks the launcher while the sync status file is written. Before, it waited on the write on the main thread, including on any running sync that held the file. Callers now await the write, so it still completes before the next step.
+- Removed the Workshop consent marker file. It was written on Workshop update and deleted on removal, but nothing read it; the confirmation shown before each Workshop update is the consent. An existing `workshop_mods_accepted.txt` is left in place and is harmless.
+- Checked by compiling against stubbed game types; not run.
+
 ## 2026-10-29 - Launch locks
 
 - While a launch is in progress, the game version can no longer be switched, checked or refreshed, and "Redownload selected version" is disabled. Before, these stayed usable while the game was starting, and a switch or redownload could repair or delete the files it was loading.

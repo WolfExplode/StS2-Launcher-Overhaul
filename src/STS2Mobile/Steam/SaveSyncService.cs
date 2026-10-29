@@ -303,13 +303,16 @@ internal sealed class SaveSyncService
         service?.SetAvailability(availability);
     }
 
-    internal static void ReportFailure(SyncFailureKind failureKind)
+    // Records the failure in memory at once; the returned task finishes when
+    // it is also written to the status file. Callers await it instead of
+    // blocking, because the write can wait on a running sync's file lock.
+    internal static Task ReportFailureAsync(SyncFailureKind failureKind)
     {
         SaveSyncService service;
         lock (ActiveLock)
             service = _active;
 
-        service?.PersistFailureAsync(failureKind).GetAwaiter().GetResult();
+        return service?.PersistFailureAsync(failureKind) ?? Task.CompletedTask;
     }
 
     internal static void NotifyGameplayMutationCommitted(string path)
