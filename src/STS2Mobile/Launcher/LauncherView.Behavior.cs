@@ -38,7 +38,6 @@ internal sealed partial class LauncherView
             PollAndroidDisplayChanges();
         else
             UpdateKeyboardOffset();
-        RequestAndroidCompositionRefresh();
     }
 
     internal void ShowConfirmation(string message, Action onConfirmed, string confirmText, string cancelText)

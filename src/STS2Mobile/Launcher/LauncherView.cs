@@ -35,7 +35,6 @@ internal sealed partial class LauncherView
     private readonly StyledPanel _panel;
     internal Node LaunchLifetimeHost => _panel;
 
-    private readonly ColorRect _androidCompositionRefresh;
     private float _keyboardOffset;
     private readonly float _scale;
     private readonly LauncherLayoutProfile _profile;
@@ -44,7 +43,6 @@ internal sealed partial class LauncherView
     private readonly Control _destinationSafeAreaSpacer;
     private readonly Button[] _destinationButtons;
     private Vector4 _systemSafeAreaInsets = new(-1, -1, -1, -1);
-    private int _androidCompositionRefreshFrames;
     private LauncherDestination _destination;
     // Null while the session is connecting and every Home section is hidden.
     private HomeStage? _homeStage;
@@ -57,7 +55,6 @@ internal sealed partial class LauncherView
         var shell = BuildShell(parent, profile, dismissKeyboard);
         _parent = parent;
         _panel = shell.Panel;
-        _androidCompositionRefresh = shell.AndroidCompositionRefresh;
         _scale = profile.Scale;
         _profile = profile;
         var primary = BuildPrimaryColumn(profile, shell.Content);

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Remove the Android composition refresh overlay
+
+- Removed the transparent overlay and its seven-frame color changes. Insets and keyboard layout still update when their observed inputs change.
+- The full launcher preview suite passed. On the Galaxy S23, dev.12 displayed the Versions page and confirmation dialog in portrait and landscape without visible stale regions, and Keep Version dismissed the dialog. Rotation with the keyboard open remains unverified.
+
 ## 2026-10-29 - Exercise download events through the controller
 
 - Added a fake model that emits running, progress, completion and stopped events through the real controller wiring. The preview checks that version controls stay locked through completion and unlock only after the stopped event; the completion fixture intentionally exercises failed runtime validation. Existing touch emulation also checks tap and drag behavior on a mod toggle.

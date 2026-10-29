@@ -5,9 +5,6 @@ using STS2Mobile.Launcher.Components;
 namespace STS2Mobile.Launcher;
 internal sealed partial class LauncherView
 {
-    private const int AndroidCompositionRefreshFrameCount = 7;
-    private static readonly Color AndroidCompositionRefreshTintA = new(0, 0, 0, 1f / 255f);
-    private static readonly Color AndroidCompositionRefreshTintB = new(0, 0, 0, 2f / 255f);
     internal event Action<LauncherDestination> DestinationSelected;
     private void WireDestinationNavigation()
     {
@@ -42,7 +39,6 @@ internal sealed partial class LauncherView
         PrimaryScroll.ScrollVertical = 0;
         RefreshPrimaryScrollRange();
         Callable.From(ResetDestinationScroll).CallDeferred();
-        RequestAndroidCompositionRefresh();
         DestinationSelected?.Invoke(destination);
     }
 
@@ -53,21 +49,6 @@ internal sealed partial class LauncherView
         // A sort alone can retain the previous destination's scrollbar range.
         RefreshPrimaryScrollRange();
         PrimaryScroll.QueueRedraw();
-    }
-
-    internal void RequestAndroidCompositionRefresh()
-    {
-        if (OperatingSystem.IsAndroid())
-            _androidCompositionRefreshFrames = AndroidCompositionRefreshFrameCount;
-    }
-
-    internal void AdvanceAndroidCompositionRefresh()
-    {
-        if (_androidCompositionRefreshFrames <= 0)
-            return;
-        // Qualcomm/Godot partial-damage paths can otherwise retain stale launcher regions.
-        var frame = _androidCompositionRefreshFrames--;
-        _androidCompositionRefresh.Color = _androidCompositionRefreshFrames == 0 ? Colors.Transparent : (frame & 1) == 0 ? AndroidCompositionRefreshTintA : AndroidCompositionRefreshTintB;
     }
 
     private void SelectHomeDestination()

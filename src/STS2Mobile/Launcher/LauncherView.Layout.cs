@@ -6,7 +6,7 @@ using STS2Mobile.Launcher.Sections;
 namespace STS2Mobile.Launcher;
 internal sealed partial class LauncherView
 {
-    private static (StyledPanel Panel, VBoxContainer Content, ColorRect AndroidCompositionRefresh) BuildShell(Control parent, LauncherLayoutProfile profile, Action<InputEvent> dismissKeyboard)
+    private static (StyledPanel Panel, VBoxContainer Content) BuildShell(Control parent, LauncherLayoutProfile profile, Action<InputEvent> dismissKeyboard)
     {
         parent.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var background = new ColorRect
@@ -27,14 +27,7 @@ internal sealed partial class LauncherView
         content.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactRootColumnSeparation : LauncherViewLayoutMetrics.RootColumnSeparation, profile.Scale));
         panel.AddContent(content);
         content.AddChild(BuildBrandHeader(profile));
-        var androidCompositionRefresh = new ColorRect
-        {
-            Color = Colors.Transparent,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        androidCompositionRefresh.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        parent.AddChild(androidCompositionRefresh);
-        return (panel, content, androidCompositionRefresh);
+        return (panel, content);
     }
 
     private static (RichTextLabel Log, VBoxContainer Drawer, Button Toggle) BuildLogColumn(LauncherLayoutProfile profile, VBoxContainer root)
@@ -161,7 +154,6 @@ internal sealed partial class LauncherView
         _panel.UpdateSafeAreaContentInsets(obscuredLeft, obscuredTop, obscuredRight);
         var bottomInset = obscuredBottom + LauncherViewLayoutMetrics.ScaleInt(4, _profile.Scale);
         _destinationSafeAreaSpacer.CustomMinimumSize = new Vector2(0, bottomInset);
-        RequestAndroidCompositionRefresh();
         GD.Print($"Launcher safe area: viewport={viewportSize} safe={safeArea} " + $"insets=({obscuredLeft},{obscuredTop},{obscuredRight},{obscuredBottom})");
     }
 
