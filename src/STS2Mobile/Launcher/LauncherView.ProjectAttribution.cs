@@ -16,10 +16,7 @@ internal sealed partial class LauncherView
             Name = "HelpAttributionFooter",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        footer.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(3, scale)
-        );
+        footer.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(3, scale));
         footer.AddChild(BuildProjectAttributionSection(scale, compact));
         footer.AddChild(BuildFmodAttributionSection(scale, compact));
         return footer;
@@ -34,10 +31,7 @@ internal sealed partial class LauncherView
                 ? Control.SizeFlags.ShrinkCenter
                 : Control.SizeFlags.ExpandFill,
         };
-        section.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(3, scale)
-        );
+        section.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(3, scale));
 
         var credit = new StyledLabel(
             "Made by SocialHummingbird",

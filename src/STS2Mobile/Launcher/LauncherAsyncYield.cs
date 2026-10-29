@@ -22,19 +22,6 @@ internal static class LauncherAsyncYield
         => await CreateWaiter(null, lifecycle).WaitForFramePostDrawAsync(deadline)
             == LauncherAsyncWaitOutcome.Signaled;
 
-    internal static async Task<bool> DelayAsync(
-        TimeSpan delay,
-        LauncherMonotonicDeadline deadline,
-        LauncherOperationLifecycle lifecycle = null
-    )
-    {
-        var milliseconds = Math.Max(0, (int)Math.Ceiling(delay.TotalMilliseconds));
-        return await CreateWaiter(null, lifecycle).WaitForDelayAsync(
-            milliseconds,
-            deadline
-        ) == LauncherAsyncWaitOutcome.Signaled;
-    }
-
     internal static LauncherAsyncSignalWaiter CreateWaiter(
         SceneTree tree,
         LauncherOperationLifecycle lifecycle = null

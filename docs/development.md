@@ -116,8 +116,7 @@ gradle -p android testMonoReleaseUnitTest --rerun-tasks
 
 If generated outputs contain unavailable OneDrive placeholders, a task-local Gradle init script can direct outputs to a local cache. Keep it outside production build dependencies; source, inputs and signing stay unchanged.
 
-For emulator startup/input checks, see
-[the responsiveness investigation](startup-responsiveness-2026-09-07.md) and
+For emulator startup/input checks, use `scripts/test-android-emulator-startup.ps1` and
 [the isolated Android harness](../tools/AndroidStartupHarness/README.md).
 
 Run the focused launcher/mod test against the already-downloaded representative
@@ -163,6 +162,8 @@ After supplying the [prerequisites](#prerequisites), use the build wrapper so th
   -GradlePath (Get-Command gradle.bat).Source `
   -KeystorePath "<existing-keystore>" -KeystoreAlias "<alias>" -KeystorePassword "<password>"
 ```
+
+The ARM64 APK also ships two stub libraries, `libsteam_api.so` and `libsentry.so`, that the wrapper does not build. They satisfy the game's Steamworks.NET and Sentry native loads; Steam initialization and Sentry are patched out. Build them by running `./build_stubs.sh` from `src/stubs` (it uses `ANDROID_NDK_ROOT`), then copy `src/stubs/out/arm64-v8a/*.so` into `android/libs/release/arm64-v8a/` before the first APK build.
 
 The wrapper archives the APK and checksum under `artifacts/android/`. For a later build, choose a unique version name and a version code higher than the installed APK. A successful build or structural APK inspection does not establish phone compatibility, gameplay success, or working Steam save transfer.
 

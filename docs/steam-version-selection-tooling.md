@@ -34,6 +34,11 @@ The managed suite checks game-file identity, PCK cache reuse, replacing a branch
 
 ## Launcher navigation and mod loading
 
+For launcher layout and interaction checks without a local mod fixture, run
+`./scripts/test-launcher-ui-preview.ps1 -UiOnly`. This runs both phone and desktop
+profiles and explicitly skips mod runtime activation. Use the full command below
+to validate mod loading as well.
+
 ```powershell
 .\scripts\test-launcher-ui-preview.ps1 `
   -ImportVanillaSavesRoot "C:\Program Files (x86)\Steam\steamapps\workshop\content\2868840\3747503308" `

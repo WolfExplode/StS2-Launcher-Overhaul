@@ -56,7 +56,7 @@ internal readonly struct LoginFormFailure
             $"{StatusPrefix}: {authFailure.UserMessage} {RecoveryMessage}",
             LauncherStatusSeverity.Error
         );
-        view.SetLoginFormVisible(visible: true, disabled: false);
+        view.ShowLoginForm(disabled: false);
     }
 
     private string LogDetail(Exception ex)

@@ -15,6 +15,7 @@ internal partial class LauncherModel
     internal event Action<BranchInstallCompletion> DownloadCompleted;
     internal event Action<LauncherBranchOperationFailure> DownloadFailed;
     internal event Action<string> DownloadCancelled;
+    internal event Action<bool> SelectedVersionOperationRunningChanged;
     internal event Action<LauncherUpdateCheckResult> UpdateCheckCompleted;
     internal event Action<LauncherBranchOperationFailure> UpdateCheckFailed;
     internal event Action BranchCatalogRefreshCompleted;
@@ -101,11 +102,11 @@ internal partial class LauncherModel
         return IsLoggedIn && _steamSession.TryGetConnection(out var connection) ? connection : null;
     }
 
-    private void RaiseDownloadCompleted(BranchInstallCompletion completion) => Raise(DownloadCompleted, completion, nameof(DownloadCompleted));
+    protected void RaiseDownloadCompleted(BranchInstallCompletion completion) => Raise(DownloadCompleted, completion, nameof(DownloadCompleted));
     private void RaiseDownloadCancelled(string branch) => Raise(DownloadCancelled, branch, nameof(DownloadCancelled));
     private void RaiseDownloadFailed(string branch, string message) => Raise(DownloadFailed, new LauncherBranchOperationFailure(branch, message), nameof(DownloadFailed));
     private void RaiseDownloadLogReceived(string message) => Raise(DownloadLogReceived, message, nameof(DownloadLogReceived));
-    private void RaiseDownloadProgressChanged(DepotDownloader.DownloadProgress progress) => Raise(DownloadProgressChanged, progress, nameof(DownloadProgressChanged));
+    protected void RaiseDownloadProgressChanged(DepotDownloader.DownloadProgress progress) => Raise(DownloadProgressChanged, progress, nameof(DownloadProgressChanged));
     private void RaiseUpdateCheckCompleted(string branch, bool hasUpdate) => Raise(UpdateCheckCompleted, new LauncherUpdateCheckResult(branch, hasUpdate), nameof(UpdateCheckCompleted));
     private void RaiseUpdateCheckFailed(string branch, string message) => Raise(UpdateCheckFailed, new LauncherBranchOperationFailure(branch, message), nameof(UpdateCheckFailed));
     private void RaiseBranchCatalogRefreshCompleted() => Raise(BranchCatalogRefreshCompleted, nameof(BranchCatalogRefreshCompleted));
@@ -115,6 +116,8 @@ internal partial class LauncherModel
     private void RaiseWorkshopSyncFailed(string message) => Raise(WorkshopSyncFailed, message, nameof(WorkshopSyncFailed));
     private void RaiseWorkshopClearCompleted(int removedCount) => Raise(WorkshopClearCompleted, removedCount, nameof(WorkshopClearCompleted));
     private void RaiseWorkshopClearFailed(string message) => Raise(WorkshopClearFailed, message, nameof(WorkshopClearFailed));
+    protected void RaiseSelectedVersionOperationRunningChanged(bool running) => Raise(SelectedVersionOperationRunningChanged, running, nameof(SelectedVersionOperationRunningChanged));
+
     private readonly struct DownloadRunGuard
     {
         private DownloadRunGuard(LauncherModel model, bool acquired)
@@ -126,11 +129,20 @@ internal partial class LauncherModel
         private LauncherModel Model { get; }
         internal bool Acquired { get; }
 
-        internal static DownloadRunGuard TryAcquire(LauncherModel model) => new(model, Interlocked.Exchange(ref model._downloadRunning, 1) == 0);
+        internal static DownloadRunGuard TryAcquire(LauncherModel model)
+        {
+            var guard = new DownloadRunGuard(model, Interlocked.Exchange(ref model._downloadRunning, 1) == 0);
+            if (guard.Acquired)
+                model.RaiseSelectedVersionOperationRunningChanged(true);
+            return guard;
+        }
+
         internal void Release()
         {
-            if (Acquired)
-                Interlocked.Exchange(ref Model._downloadRunning, 0);
+            if (!Acquired)
+                return;
+            Interlocked.Exchange(ref Model._downloadRunning, 0);
+            Model.RaiseSelectedVersionOperationRunningChanged(false);
         }
     }
 

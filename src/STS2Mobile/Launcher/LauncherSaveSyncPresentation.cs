@@ -95,9 +95,7 @@ internal readonly record struct LauncherSaveSyncPresentation(
             "Checking"
         );
 
-    internal static LauncherSaveSyncPresentation Conflict(
-        SaveSyncService.StatusSnapshot status
-    )
+    internal static LauncherSaveSyncPresentation Conflict()
         => new(
             LauncherSaveSyncState.Conflict,
             "Conflict · Choose which copy to keep",

@@ -9,7 +9,7 @@ namespace STS2Mobile.Launcher;
 internal sealed partial class RuntimePackManifest
 {
     internal const string AndroidAssemblyFileName = "sts2.dll";
-    private RuntimePackManifest(string path, string expectedBranch, GameIdentity expectedGameIdentity, string packId, string sourceBranch, string installGeneration, string sourcePckSha256, string sourceAssemblySha256, string gameIdentityId, string androidAssemblySha256, string patchSetVersion, string patchValidationStatus, string patchValidationReport, string validationMode, string validationSurfaceVersion, string[] supportAssemblies, IReadOnlyDictionary<string, string> supportAssemblySha256, bool supportAssembliesDeclared, bool supportAssemblySha256Declared, int checkedSymbolCount, int presentSymbolCount, int missingSymbolCount, string minimumLauncherVersion, bool generatedFromCleanDirectory, string status, bool exists, bool readable, bool androidAssemblyExists, string androidAssemblyPath, string actualAndroidAssemblySha256)
+    private RuntimePackManifest(string path, string expectedBranch, GameIdentity expectedGameIdentity, string packId, string sourceBranch, string installGeneration, string sourcePckSha256, string sourceAssemblySha256, string gameIdentityId, string androidAssemblySha256, string patchSetVersion, string patchValidationStatus, string patchValidationReport, string validationMode, string validationSurfaceVersion, string[] supportAssemblies, IReadOnlyDictionary<string, string> supportAssemblySha256, bool supportAssembliesDeclared, bool supportAssemblySha256Declared, int checkedSymbolCount, int presentSymbolCount, int missingSymbolCount, bool generatedFromCleanDirectory, string status, bool exists, bool readable, bool androidAssemblyExists, string androidAssemblyPath, string actualAndroidAssemblySha256)
     {
         Path = path;
         DirectoryPath = System.IO.Path.GetDirectoryName(path) ?? string.Empty;
@@ -36,7 +36,6 @@ internal sealed partial class RuntimePackManifest
         CheckedSymbolCount = checkedSymbolCount;
         PresentSymbolCount = presentSymbolCount;
         MissingSymbolCount = missingSymbolCount;
-        MinimumLauncherVersion = minimumLauncherVersion;
         GeneratedFromCleanDirectory = generatedFromCleanDirectory;
         Status = status;
         Exists = exists;
@@ -70,7 +69,6 @@ internal sealed partial class RuntimePackManifest
     internal int CheckedSymbolCount { get; }
     internal int PresentSymbolCount { get; }
     internal int MissingSymbolCount { get; }
-    internal string MinimumLauncherVersion { get; }
     internal bool GeneratedFromCleanDirectory { get; }
     internal string Status { get; }
     internal bool Exists { get; }
@@ -83,86 +81,37 @@ internal sealed partial class RuntimePackManifest
     internal bool Usable => string.Equals(Status, "usable", StringComparison.OrdinalIgnoreCase);
     internal bool PatchValidationPassed => string.Equals(PatchValidationStatus, "passed", StringComparison.OrdinalIgnoreCase);
 
-    private static string ReadString(JsonElement root, params string[] names)
+    private static string ReadString(JsonElement root, string name)
+        => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
+
+    private static int ReadInt(JsonElement root, string name)
+        => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var intValue)
+            ? intValue
+            : 0;
+
+    private static string[] ReadStringArray(JsonElement root, string name)
+        => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
+            ? value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray()
+            : Array.Empty<string>();
+
+    private static bool HasProperty(JsonElement root, string name) => root.TryGetProperty(name, out _);
+
+    private static IReadOnlyDictionary<string, string> ReadStringDictionary(JsonElement root, string name)
     {
-        foreach (var name in names)
-        {
-            if (root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String)
-                return value.GetString() ?? string.Empty;
-        }
-
-        return string.Empty;
-    }
-
-    private static int ReadInt(JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!root.TryGetProperty(name, out var value))
-                continue;
-            if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var intValue))
-                return intValue;
-            if (value.ValueKind == JsonValueKind.String && int.TryParse(value.GetString(), out intValue))
-                return intValue;
-        }
-
-        return 0;
-    }
-
-    private static string[] ReadStringArray(JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array)
-                return value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString() ?? string.Empty).ToArray();
-        }
-
-        return Array.Empty<string>();
-    }
-
-    private static bool HasProperty(JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (root.TryGetProperty(name, out _))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static IReadOnlyDictionary<string, string> ReadStringDictionary(JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
-        {
-            if (!root.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object)
-                continue;
-            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var item in value.EnumerateObject())
-            {
-                if (item.Value.ValueKind == JsonValueKind.String)
-                    result[item.Name] = item.Value.GetString() ?? string.Empty;
-            }
-
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object)
             return result;
-        }
-
-        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static bool ReadBool(JsonElement root, params string[] names)
-    {
-        foreach (var name in names)
+        foreach (var item in value.EnumerateObject())
         {
-            if (root.TryGetProperty(name, out var value))
-            {
-                if (value.ValueKind == JsonValueKind.True)
-                    return true;
-                if (value.ValueKind == JsonValueKind.False)
-                    return false;
-            }
+            if (item.Value.ValueKind == JsonValueKind.String)
+                result[item.Name] = item.Value.GetString() ?? string.Empty;
         }
 
-        return false;
+        return result;
     }
+
+    private static bool ReadBool(JsonElement root, string name)
+        => root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 }

@@ -19,7 +19,7 @@ internal sealed partial class ActionSection
         };
         stateLine.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(stateLine);
-        var helpButton = AddSecondaryHiddenButton(group, "Open Help", scale, () => HomeHelpPressed?.Invoke());
+        var helpButton = AddSecondaryHiddenButton(group, "Open Help", scale, () => HomeDestinationPressed?.Invoke(LauncherDestination.Help));
         helpButton.AccessibilityName = "Open Help";
         LauncherButtonStyles.ApplySupportAction(helpButton, scale);
         return (group, stateLine, helpButton);
@@ -27,16 +27,16 @@ internal sealed partial class ActionSection
 
     private void UpdateHomeStateLine()
     {
-        var normalizedBranch = SteamGameBranch.Normalize(_gameBranch);
-        var branch = string.Equals(normalizedBranch, SteamGameBranch.Public, System.StringComparison.OrdinalIgnoreCase) ? "Public" : string.Equals(normalizedBranch, SteamGameBranch.Beta, System.StringComparison.OrdinalIgnoreCase) ? "Beta" : SteamGameBranch.DisplayName(_gameBranch);
+        var normalizedBranch = _versions.Branch;
+        var branch = string.Equals(normalizedBranch, SteamGameBranch.Public, System.StringComparison.OrdinalIgnoreCase) ? "Public" : string.Equals(normalizedBranch, SteamGameBranch.Beta, System.StringComparison.OrdinalIgnoreCase) ? "Beta" : SteamGameBranch.DisplayName(_versions.Branch);
         _homeStateLine.Text = $"{branch} · {_homeSaveNamespace} · {_homeSyncState}";
     }
 
     private static string PresentationText(string value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-    internal void ShowHomeHelpAction() => _homeHelpButton.Visible = true;
-    private void BuildDestinationLayout()
+    private void BuildDestinationLayout(Control sectionHeader)
     {
-        GetChild<Control>(0).Visible = false;
+        // Each destination carries its own heading.
+        sectionHeader.Visible = false;
         _homeDestination = BuildDestination("Home", LauncherComponentTheme.OrangeAccent);
         _savesDestination = BuildDestination("Saves", new Color(0.25f, 0.65f, 0.75f));
         _versionsDestination = BuildDestination("Versions", LauncherComponentTheme.CyanAccent);
@@ -68,6 +68,15 @@ internal sealed partial class ActionSection
         appUpdate.Pressed += () => CheckAppUpdatesPressed?.Invoke();
         _helpDestination.AddChild(appUpdate);
         _helpDestination.AddChild(BuildHelpDiagnosticsGroup());
+        // Destination tools work without a signed-in session or an installed
+        // version, so they stay visible. Only the play actions and the
+        // install-dependent redownload change with launcher state.
+        _modsGroup.Visible = true;
+        _refreshVersionsButton.Visible = true;
+        _diagnosticsButton.Visible = true;
+        _showLastErrorButton.Visible = true;
+        _copyRawLogButton.Visible = true;
+        UpdateVersionActionAvailability();
         Visible = true;
         SetDestination(LauncherDestination.Home);
     }
@@ -79,7 +88,7 @@ internal sealed partial class ActionSection
             Name = "SelectedVersionRepairGroup",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         var title = new StyledLabel("Selected version redownload", _scale, fontSize: _compact ? LauncherSectionMetrics.CompactVersionSummaryFontSize : LauncherSectionMetrics.ProgressFontSize, align: HorizontalAlignment.Left);
         title.Name = "SelectedVersionRepairLabel";
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
@@ -91,13 +100,12 @@ internal sealed partial class ActionSection
         };
         guidance.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(guidance);
-        var actions = new GridContainer
+        var actions = new VBoxContainer
         {
             Name = "SelectedVersionRepairActions",
-            Columns = 1,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        actions.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        actions.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         MoveTo(actions, _redownloadButton);
         group.AddChild(actions);
         return group;
@@ -122,20 +130,17 @@ internal sealed partial class ActionSection
             Name = "HelpDiagnosticsGroup",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         var title = new StyledLabel("Diagnostics", _scale, fontSize: _compact ? LauncherSectionMetrics.CompactVersionSummaryFontSize : LauncherSectionMetrics.ProgressFontSize, align: HorizontalAlignment.Left)
         {
             Name = "HelpDiagnosticsLabel",
         };
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(title);
-        var actions = new GridContainer
+        var actions = new ResponsiveGrid(LauncherViewLayoutMetrics.ScaleInt(6, _scale), maxColumns: 2)
         {
             Name = "HelpDiagnosticsActions",
-            Columns = _compactStackedActionRows ? 1 : 2,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        actions.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         MoveTo(actions, _diagnosticsButton);
         var reportBug = new StyledButton("Report a bug on GitHub", _scale, height: LauncherSectionMetrics.SecondaryButtonHeight)
         {
@@ -153,16 +158,6 @@ internal sealed partial class ActionSection
         return group;
     }
 
-    private void UpdateVersionMaintenanceVisibility()
-    {
-        if (_versionMaintenanceGroup == null)
-            return;
-        _refreshVersionsButton.Visible = true;
-        _versionSelectionGroup.Visible = true;
-        _versionMaintenanceGroup.Visible = true;
-        UpdateVersionActionAvailability();
-    }
-
     private VBoxContainer BuildDestination(string title, Color accent)
     {
         var destination = new VBoxContainer
@@ -171,13 +166,13 @@ internal sealed partial class ActionSection
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             Visible = false,
         };
-        destination.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(_compact ? 10 : 12, _scale));
+        destination.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(_compact ? 10 : 12, _scale));
         var heading = new VBoxContainer
         {
             Name = $"{title}DestinationHeader",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        heading.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(4, _scale));
+        heading.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(4, _scale));
         var titleLabel = new StyledLabel(title == "Home" ? "Slay the Spire 2" : title, _scale, fontSize: _compact ? 28 : 34, align: HorizontalAlignment.Left);
         titleLabel.Name = $"{title}DestinationTitle";
         titleLabel.AddThemeColorOverride("font_color", LauncherComponentTheme.TextPrimary);
@@ -216,7 +211,7 @@ internal sealed partial class ActionSection
 
     private void ApplyDestinationVisibility()
     {
-        _homeDestination.Visible = _destination == LauncherDestination.Home && (_launchButton.Visible || _retryButton.Visible);
+        _homeDestination.Visible = _destination == LauncherDestination.Home && _playActions != PlayActions.Hidden;
         _savesDestination.Visible = _destination == LauncherDestination.Saves;
         _versionsDestination.Visible = _destination == LauncherDestination.Versions;
         _modsDestination.Visible = _destination == LauncherDestination.Mods;
@@ -230,7 +225,7 @@ internal sealed partial class ActionSection
         {
             Name = "HomeShortcuts"
         };
-        group.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(10, _scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(10, _scale));
         var label = new StyledLabel("YOUR GAME", _scale, fontSize: 12, align: HorizontalAlignment.Left);
         label.AddThemeColorOverride("font_color", LauncherComponentTheme.TextSecondary);
         group.AddChild(new Control { CustomMinimumSize = new Vector2(0, 12 * _scale), MouseFilter = Control.MouseFilterEnum.Ignore });
@@ -259,7 +254,7 @@ internal sealed partial class ActionSection
         row.SetAnchorsAndOffsetsPreset(Control.LayoutPreset.FullRect);
         row.OffsetLeft = 16 * _scale;
         row.OffsetRight = -16 * _scale;
-        row.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(14, _scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(14, _scale));
         row.AddChild(new TextureRect { Texture = LauncherIcons.Create((int)destination, _scale), StretchMode = TextureRect.StretchModeEnum.KeepCentered, Modulate = LauncherComponentTheme.CyanAccent, MouseFilter = Control.MouseFilterEnum.Ignore, });
         var copy = new VBoxContainer
         {

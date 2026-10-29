@@ -14,7 +14,7 @@ internal sealed partial class LauncherUpdateCoordinator
         if (_updateCheckRunning)
             return;
 
-        var branch = LauncherPreferences.ReadGameBranch();
+        var branch = _versions.SelectedBranch;
         LauncherLaunchMarkers.RecordPhase(
             "update check requested",
             $"branch={branch}"

@@ -62,7 +62,7 @@ internal static class ModRuntimeActivationTest
                 _ => scenario != "disabled", StringComparer.OrdinalIgnoreCase),
         };
         LauncherModSelectionState.Save(AppPaths.AppPrivateModSelectionPath, selection);
-        WorkshopModConsent.Accept("isolated original-framework fixture");
+        AppPaths.EnsureWorkshopDirectories();
         var resolution = LauncherModLaunchPlan.Resolve(selection);
         Require(resolution.Success, resolution.Error?.Message ?? "Source preparation failed.");
         var plan = resolution.Plan;

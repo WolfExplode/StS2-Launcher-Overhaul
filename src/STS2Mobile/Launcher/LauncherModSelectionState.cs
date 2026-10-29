@@ -107,9 +107,6 @@ internal static class LauncherModSelectionState
         ).ToLowerInvariant();
     }
 
-    internal static int InstalledModCount()
-        => KnownMods().Count(mod => !mod.IsUnsupported);
-
     internal static IReadOnlyList<LauncherKnownMod> KnownMods()
         => KnownMods(Load());
 

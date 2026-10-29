@@ -15,6 +15,7 @@ internal sealed partial class LauncherUpdateCoordinator
 
         if (!string.IsNullOrWhiteSpace(updateProblem))
         {
+            _view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
             UpdateCheckViewUpdate.Blocked(
                 updateProblem.Replace("Download blocked:", "Update check blocked:"),
                 STS2Mobile.Steam.SteamGameBranch.DisplayName(selectedBranch)

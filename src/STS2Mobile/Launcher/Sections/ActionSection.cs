@@ -30,7 +30,6 @@ internal sealed partial class ActionSection : VBoxContainer
     internal event Action WorkshopSyncPressed;
     internal event Action WorkshopClearPressed;
     internal event Action ModsSelectionChanged;
-    internal event Action HomeHelpPressed;
     private readonly Button _launchButton;
     private readonly Button _safeLaunchButton;
     private readonly VBoxContainer _homeJourney;
@@ -43,7 +42,6 @@ internal sealed partial class ActionSection : VBoxContainer
     private readonly Button _retryButton;
     private readonly float _scale;
     private readonly bool _compact;
-    private readonly bool _compactStackedActionRows;
     private readonly VBoxContainer _versionSelectionGroup;
     private readonly OptionButton _branchDropdown;
     private readonly Label _branchHelpLabel;
@@ -79,7 +77,6 @@ internal sealed partial class ActionSection : VBoxContainer
     private VBoxContainer _helpDestination;
     private VBoxContainer _versionMaintenanceGroup;
     private readonly List<LauncherBranchCatalog.BranchOption> _branchOptions = new();
-    private IReadOnlyList<LauncherBranchCatalog.BranchOption> _availableBranches = Array.Empty<LauncherBranchCatalog.BranchOption>();
     private bool _launchControlsDisabled;
     private bool _workshopButtonsDisabled;
     private bool _powerVrCompatibilityRequired;
@@ -87,43 +84,8 @@ internal sealed partial class ActionSection : VBoxContainer
     private string _contextualPlayLabel = "Play Vanilla";
     private string _homeSaveNamespace = "Vanilla saves";
     private string _homeSyncState = "Not synced yet";
-    private string _gameBranch = SteamGameBranch.Public;
-    private bool _selectedVersionInstalled;
-    private LauncherVersionPrimaryAction _versionPrimaryAction = LauncherVersionPrimaryAction.CheckForUpdates;
-    private LauncherVersionCheckOutcome _versionCheckOutcome;
+    private LauncherVersionsState _versions = LauncherVersionsState.Initial;
     private string _rendererMode = LauncherRendererMode.Auto;
-    private void UpdateVersionActionAvailability()
-    {
-        _redownloadButton.Visible = _selectedVersionInstalled;
-        if (_versionMaintenanceGroup != null)
-            _versionMaintenanceGroup.Visible = _redownloadButton.Visible;
-    }
-
-    internal void SetUpdateButtonText(string text) => SetCompactActionButtonText(_updateButton, text);
-    internal void SetVersionPrimaryAction(LauncherVersionPrimaryAction action)
-    {
-        _versionPrimaryAction = action;
-        SetCompactActionButtonText(_updateButton, action == LauncherVersionPrimaryAction.UpdateSelectedVersion ? "Update selected Steam branch" : "Check for updates");
-        _updateButton.AccessibilityName = action == LauncherVersionPrimaryAction.UpdateSelectedVersion ? "Update selected Steam branch" : "Check for updates";
-    }
-
-    internal void SetVersionSelectionDisabled(bool disabled) => _branchDropdown.Disabled = disabled;
-    internal void SetVersionCheckOutcome(LauncherVersionCheckOutcome outcome)
-    {
-        _versionCheckOutcome = outcome;
-        UpdateBranchHelpText();
-    }
-
-    private void InvokeVersionPrimaryAction()
-    {
-        if (_versionPrimaryAction == LauncherVersionPrimaryAction.UpdateSelectedVersion)
-            UpdateSelectedVersionPressed?.Invoke();
-        else
-            CheckForUpdatesPressed?.Invoke();
-    }
-
-    internal void SetUpdateButtonDisabled(bool disabled) => _updateButton.Disabled = disabled;
-    internal void SetRefreshVersionsButtonDisabled(bool disabled) => _refreshVersionsButton.Disabled = disabled;
     internal void SetWorkshopButtonsDisabled(bool disabled)
     {
         _workshopButtonsDisabled = disabled;
@@ -212,12 +174,11 @@ internal sealed partial class ActionSection : VBoxContainer
 
     private static string CompactSupportToolText(string text, string detail) => $"{text}\n{detail}";
     private void SetCompactActionButtonText(Button button, string text) => CompactButtonDetailLabels.Apply(button, text, _scale, _compact, CompactActionButtonLabels);
-    internal ActionSection(float scale, bool compact = false, bool compactStackedActionRows = false)
+    internal ActionSection(float scale, bool compact = false)
     {
         _scale = scale;
         _compact = compact;
-        _compactStackedActionRows = compactStackedActionRows;
-        LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Play", "Launch the game, choose a version, and manage mods.", LauncherComponentTheme.OrangeHot, compact, "Play safely");
+        var sectionHeader = LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Play", "Launch the game, choose a version, and manage mods.", LauncherComponentTheme.OrangeHot, compact, "Play safely");
         var toggleRadius = (int)(10 * scale);
         var toggleBorderWidth = Math.Max(1, (int)(2 * scale));
         _toggleOffStyle = LauncherStyleBoxes.MakeOutline(LauncherComponentTheme.ButtonHover, toggleRadius, toggleBorderWidth);
@@ -269,8 +230,8 @@ internal sealed partial class ActionSection : VBoxContainer
         _diagnosticsButton = supportControls.DiagnosticsButton;
         _showLastErrorButton = supportControls.ShowLastErrorButton;
         _copyRawLogButton = supportControls.CopyRawLogButton;
-        SetGameBranch(_gameBranch);
-        BuildDestinationLayout();
+        SetVersions(_versions);
+        BuildDestinationLayout(sectionHeader);
         supportToolsParent.QueueFree();
     }
 
@@ -294,15 +255,13 @@ internal sealed partial class ActionSection : VBoxContainer
     {
         var group = new VBoxContainer();
         group.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        group.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.SectionSeparation, scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.SectionSeparation, scale));
         return group;
     }
 
-    private static Container BuildCompactActionRow(Container parent, float scale, bool compactStackedActionRows)
+    private static Container BuildCompactActionRow(Container parent, float scale)
     {
-        Container row = compactStackedActionRows ? new VBoxContainer() : new HBoxContainer();
-        row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactActionSeparation, scale));
+        var row = new ResponsiveGrid(LauncherViewLayoutMetrics.ScaleInt(CompactActionSeparation, scale));
         parent.AddChild(row);
         return row;
     }

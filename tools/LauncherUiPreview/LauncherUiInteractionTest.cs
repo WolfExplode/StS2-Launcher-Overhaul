@@ -13,6 +13,45 @@ namespace LauncherUiPreview;
 
 internal static class LauncherUiInteractionTest
 {
+    private sealed class FakeDownloadModel : LauncherModel
+    {
+        internal FakeDownloadModel(string dataDir) : base(dataDir) { }
+        internal void SetRunning(bool running) => RaiseSelectedVersionOperationRunningChanged(running);
+        internal void Progress(string text) => RaiseDownloadProgressChanged(STS2Mobile.Steam.DepotDownloader.DownloadProgress.Status(text));
+        internal void Complete(BranchInstallCompletion completion) => RaiseDownloadCompleted(completion);
+    }
+
+    internal static void AssertControllerDownloadEventOrder(LauncherView view, Control root)
+    {
+        using var model = new FakeDownloadModel(AppPaths.AppPrivateDataDir);
+        var dispatch = new ConcurrentQueue<Action>();
+        var controller = new LauncherController(model, view, dispatch.Enqueue);
+        void Drain() { while (dispatch.TryDequeue(out var action)) action(); }
+        typeof(LauncherController).GetMethod("WireModelEvents", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(controller, null);
+        view.ShowLaunchActions(showUpdate: true);
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
+        view.SetUpdateCheckBusy(false);
+        view.SetLaunchInProgress(false);
+        view.SelectDestination(LauncherDestination.Versions);
+        model.SetRunning(true);
+        Drain();
+        Expect(FindVisibleButton(root, "Check for updates").Disabled && FindVisibleButton(root, "Refresh list").Disabled,
+            "The controller must lock version actions when a selected-version operation starts.");
+        model.Progress("Preparing test files");
+        Drain();
+        var hash = new string('a', 64);
+        model.Complete(new BranchInstallCompletion("public", Guid.NewGuid(), new GameIdentity("public", hash, hash, hash)));
+        Drain();
+        view.SelectDestination(LauncherDestination.Versions);
+        var selector = Descendants<OptionButton>(FindUniqueVisibleNamed<Control>(root, "GameVersionSelection")).Single(IsLiveAndVisible);
+        Expect(selector.Disabled && FindVisibleButton(root, "Refresh list").Disabled,
+            "Completion must not unlock version actions before the operation ends.");
+        model.SetRunning(false);
+        Drain();
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Refresh list").Disabled,
+            "The controller must unlock version actions after the running event ends.");
+    }
+
     internal static async Task AssertModsRefreshRejectsStaleCompletionAsync(LauncherView view, Control root)
     {
         var selectionPath = AppPaths.AppPrivateModSelectionPath;
@@ -80,7 +119,7 @@ internal static class LauncherUiInteractionTest
                     profile.ContentMaxWidth, profile.Mode, profile.TouchOptimized, profile.Compact, profile.CompactStackedActionRows,
                 });
                 var view = new LauncherView(root, profile);
-                view.ShowLaunchActions("Play", showUpdate: true);
+                view.ShowLaunchActions(showUpdate: true);
                 GD.Print($"MODS_SCROLL_TABLET_SCALE={scale}");
                 await AssertModsScrollAfterListGrowthAsync(view, root);
             }
@@ -100,7 +139,7 @@ internal static class LauncherUiInteractionTest
         var scroll = FindUniqueVisibleNamed<ScrollContainer>(root, "LauncherPrimaryScroll");
         GD.Print("MODS_SCROLL_BEFORE_GROWTH=" + Geometry());
 
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(6);
         root.GetViewport().GuiReleaseFocus();
         scroll.ScrollVertical = 0;
@@ -123,8 +162,37 @@ internal static class LauncherUiInteractionTest
         {
             Position = point, GlobalPosition = point, ButtonIndex = MouseButton.WheelDown, Pressed = true, Factor = 1,
         }, true);
+        root.GetViewport().PushInput(new InputEventMouseButton
+        {
+            Position = point, GlobalPosition = point, ButtonIndex = MouseButton.WheelDown, Pressed = false,
+        }, true);
         await Frames(4);
         Expect(scroll.ScrollVertical > 0, "Wheel input must scroll the grown mod list: " + Geometry());
+
+        var stopped = Descendants<Control>(scroll)
+            .Where(control => control.MouseFilter == Control.MouseFilterEnum.Stop && control is not (ScrollBar or LineEdit or TextEdit))
+            .Select(control => control.Name.ToString())
+            .ToArray();
+        Expect(stopped.Length == 0, "Controls inside the page must pass touch drags to it: " + string.Join(", ", stopped));
+
+        scroll.ScrollVertical = 0;
+        await Frames(3);
+        var firstToggle = Descendants<CheckButton>(FindUniqueVisibleNamed<Control>(root, "ModsList"))
+            .First(toggle => IsLiveAndVisible(toggle) && toggle.Name == "ModEnabledToggle" && scroll.GetGlobalRect().Encloses(toggle.GetGlobalRect()));
+        var toggleStart = firstToggle.GetGlobalRect().GetCenter();
+        Expect(!firstToggle.Disabled, "The drag fixture needs an enabled toggle.");
+        var wasEnabled = firstToggle.ButtonPressed;
+        await Drag(toggleStart, toggleStart);
+        Expect(firstToggle.ButtonPressed != wasEnabled, "A tap on a mod toggle inside the page must still toggle it: " + Geometry());
+        await Drag(toggleStart, toggleStart);
+        Expect(firstToggle.ButtonPressed == wasEnabled, "A second tap must restore the mod toggle: " + Geometry());
+        root.GetViewport().GuiReleaseFocus();
+        scroll.ScrollVertical = 0;
+        await Frames(3);
+        await Drag(toggleStart, toggleStart - new Vector2(0, firstToggle.Size.Y * 2));
+        Expect(scroll.ScrollVertical > 0, "A finger drag that starts on a mod toggle must scroll the page: " + Geometry());
+        Expect(firstToggle.ButtonPressed == wasEnabled, "Drag-scrolling must not toggle the mod it started on: " + Geometry());
+        root.GetViewport().GuiReleaseFocus();
 
         scroll.ScrollVertical = 0;
         await Frames(3);
@@ -134,7 +202,7 @@ internal static class LauncherUiInteractionTest
             "Focusing an offscreen appended mod must reveal it: " + Geometry());
         GD.Print("MODS_SCROLL_FOCUS=" + Geometry());
 
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(6);
         Expect(scroll.ScrollVertical > 0, "Refreshing the same mod rows must not pin the viewport back to zero: " + Geometry());
         root.GetViewport().GuiReleaseFocus();
@@ -144,7 +212,7 @@ internal static class LauncherUiInteractionTest
         view.SelectDestination(LauncherDestination.Home);
         view.SetModsPresentation(OverflowPresentation(4));
         await Frames(3);
-        view.SetModsPresentation(OverflowPresentation(6));
+        view.SetModsPresentation(OverflowPresentation(24));
         await Frames(3);
         view.SelectDestination(LauncherDestination.Mods);
         await Frames(6);
@@ -165,6 +233,31 @@ internal static class LauncherUiInteractionTest
             for (var frame = 0; frame < count; frame++)
                 await root.ToSignal(root.GetTree(), SceneTree.SignalName.ProcessFrame);
         }
+        // The preview project emulates touch from the mouse, as Android does.
+        async Task Drag(Vector2 from, Vector2 to)
+        {
+            var viewport = root.GetViewport();
+            viewport.PushInput(new InputEventMouseButton
+            {
+                Position = from, GlobalPosition = from, ButtonIndex = MouseButton.Left, ButtonMask = MouseButtonMask.Left, Pressed = true,
+            }, true);
+            await Frames(1);
+            const int steps = 8;
+            for (var step = 1; step <= steps; step++)
+            {
+                var position = from.Lerp(to, step / (float)steps);
+                viewport.PushInput(new InputEventMouseMotion
+                {
+                    Position = position, GlobalPosition = position, Relative = (to - from) / steps, ButtonMask = MouseButtonMask.Left,
+                }, true);
+                await Frames(1);
+            }
+            viewport.PushInput(new InputEventMouseButton
+            {
+                Position = to, GlobalPosition = to, ButtonIndex = MouseButton.Left, Pressed = false,
+            }, true);
+            await Frames(3);
+        }
         string Geometry()
         {
             var range = scroll.GetVScrollBar();
@@ -175,8 +268,9 @@ internal static class LauncherUiInteractionTest
         static LauncherModsPresentation OverflowPresentation(int count)
         {
             var names = new[] { "ARAM: Mayhem", "BaseLib", "Import Vanilla Saves", "Quick Restart 2", "CookieCursor", "FixtureCrypto" };
-            var mods = names.Take(count).Select((name, index) => new LauncherModPresentationItem(
-                "scroll-fixture:" + index, "scroll-fixture-" + index, name,
+            // Keep growing past the named examples so every viewport has overflow.
+            var mods = Enumerable.Range(0, count).Select(index => new LauncherModPresentationItem(
+                "scroll-fixture:" + index, "scroll-fixture-" + index, names[index % names.Length] + " " + index,
                 index < 4 ? "Workshop" : "Manual", true, index < 4, true,
                 LauncherModLastLaunchState.NotTestedYet, false, "Scroll geometry fixture.")).ToArray();
             return new LauncherModsPresentation(LauncherModPlayMode.Modded, "scroll-fixture", LauncherModsPresentationState.PendingSaveNamespaceLabel,
@@ -190,20 +284,24 @@ internal static class LauncherUiInteractionTest
         LauncherPreferences.SaveGameBranch("public");
         var model = new LauncherModel(AppPaths.AppPrivateDataDir);
         var diagnostics = new LauncherDiagnosticsCoordinator(model, view);
-        var launch = new LauncherLaunchCoordinator(model, view, diagnostics);
-        var versions = new LauncherVersionCoordinator(model, view);
+        var selectedBranch = LauncherPreferences.ReadGameBranch();
+        var launch = new LauncherLaunchCoordinator(model, view, diagnostics, () => selectedBranch);
+        var versions = new LauncherVersionCoordinator(model, view, () => selectedBranch);
         var downloads = new LauncherDownloadCoordinator(
             model,
             view,
             launch,
-            versions.RefreshGameBranchOptions
+            versions.RefreshGameBranchOptions,
+            () => selectedBranch
         );
         var branchSwitch = new LauncherBranchSwitchCoordinator(
             model,
             view,
             versions,
             launch,
-            downloads
+            downloads,
+            () => selectedBranch,
+            branch => selectedBranch = branch
         );
         WireEvents(view, events, branchSwitch.GameBranchChanged);
 
@@ -227,7 +325,7 @@ internal static class LauncherUiInteractionTest
         Expect(events.ReportBug == 1, "GitHub bug report did not route exactly once.");
         Press(root, "Check for app updates");
         Expect(events.AppUpdate == 1, "App update check did not route exactly once.");
-        view.HideActions();
+        view.ShowSetupGuide();
         Press(root, "Mods");
         view.SetModsPresentation(VanillaDisabledPresentation());
         AssertModsPresentation(
@@ -257,7 +355,7 @@ internal static class LauncherUiInteractionTest
             enabled: true,
             "Loaded last launch"
         );
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         Press(root, "Home");
         // Visibility changes retain the observed presentation until the
         // controller supplies a fresh background result.
@@ -340,7 +438,7 @@ internal static class LauncherUiInteractionTest
             "Failed last launch"
         );
 
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         Press(root, "Home");
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
         var play = FindVisibleButton(root, "Play Vanilla");
@@ -364,7 +462,8 @@ internal static class LauncherUiInteractionTest
         Expect(events.CopyRawLog == 1, "Copy launcher log did not route exactly once.");
         Expect(events.ModsSelectionChanged == 5, "Mode selectors or the importer toggle did not persist each change.");
 
-        DownloadViewUpdate.AutomaticRepairStarted().Apply(view, launch);
+        downloads.SetOperationRunning(true);
+        downloads.ShowAutomaticRepairPresentation();
         AssertVisibleLabelText(
             root,
             "GlobalStatusMessage",
@@ -388,6 +487,16 @@ internal static class LauncherUiInteractionTest
                 && VisibleNamedCount<Control>(root, "ConfirmationActions") == 0,
             "Automatic repair invoked or displayed the destructive redownload route."
         );
+        downloads.UpdateDownloadProgress(STS2Mobile.Steam.DepotDownloader.DownloadProgress.Status("Preparing files"));
+        Expect(FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled,
+            "Progress must not unlock the download while the operation is running.");
+        downloads.CancelDownload("public");
+        Expect(FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled,
+            "Cancellation must not unlock the download before the running event ends.");
+        downloads.SetOperationRunning(false);
+        Expect(!FindUniqueVisibleNamed<Button>(root, "DownloadGameFilesAction").Disabled
+            && !Descendants<ProgressBar>(root).Any(IsLiveAndVisible),
+            "A completed cancellation must restore the download action and hide progress.");
     }
 
     private static void AssertHelpJourney(
@@ -641,6 +750,7 @@ internal static class LauncherUiInteractionTest
 
         Press(root, "Check for updates");
         Press(root, "Refresh list");
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.UpdateAvailable);
         UpdateCheckViewUpdate.Completed(hasUpdate: true, "Public").Apply(view);
         AssertPrimaryHierarchy(
             root,
@@ -648,8 +758,13 @@ internal static class LauncherUiInteractionTest
             "Update selected Steam branch"
         );
         _ = FindVisibleButton(root, "Update selected Steam branch");
+        // Showing the play actions again must keep the update result.
+        view.ShowLaunchActions(showUpdate: true);
+        view.SelectDestination(LauncherDestination.Versions);
+        _ = FindVisibleButton(root, "Update selected Steam branch");
         _ = FindUniqueVisibleNamed<Control>(root, "VersionsDestination");
         Press(root, "Update selected Steam branch");
+        view.SetVersionCheckOutcome(LauncherVersionCheckOutcome.UpToDate);
         UpdateCheckViewUpdate.Completed(hasUpdate: false, "Public").Apply(view);
         _ = FindVisibleButton(root, "Check for updates");
         AssertVisibleLabelText(
@@ -657,6 +772,32 @@ internal static class LauncherUiInteractionTest
             "SelectedGameVersionState",
             "Selected for Play · Installed on this device · Up to date"
         );
+        view.SetUpdateCheckBusy(true);
+        Expect(FindVisibleButton(root, "Checking...").Disabled,
+            "A running update check left the update action enabled.");
+        view.SetUpdateCheckBusy(false);
+        Expect(!FindVisibleButton(root, "Check for updates").Disabled,
+            "A finished update check did not restore the update action.");
+        view.SetSelectedVersionOperationRunning(true);
+        Expect(selector.Disabled
+                && FindVisibleButton(root, "Check for updates").Disabled
+                && FindVisibleButton(root, "Refresh list").Disabled,
+            "A running download left the version controls usable.");
+        view.SetSelectedVersionOperationRunning(false);
+        view.SetRefreshGameVersionsBusy(true);
+        view.SetUpdateCheckBusy(true);
+        view.SetUpdateCheckBusy(false);
+        Expect(selector.Disabled && FindVisibleButton(root, "Check for updates").Disabled,
+            "A finished update check unlocked the version controls while the list was refreshing.");
+        view.SetRefreshGameVersionsBusy(false);
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Refresh list").Disabled,
+            "The version controls stayed locked after every operation finished.");
+        view.SetLaunchInProgress(true);
+        Expect(selector.Disabled && FindVisibleButton(root, "Redownload selected version").Disabled,
+            "A starting game left its version switchable or its files removable.");
+        view.SetLaunchInProgress(false);
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Redownload selected version").Disabled,
+            "A finished launch attempt left the version controls locked.");
 
         var betaIndex = Enumerable.Range(0, selector.ItemCount)
             .Single(index => string.Equals(
@@ -772,13 +913,12 @@ internal static class LauncherUiInteractionTest
                 "Changes queued",
                 "Changes queued",
                 "Waiting to sync"
-            )
+            ),
+            busy: false
         );
         AssertReadyHome(root, "Beta · Vanilla saves · Changes queued", "Play Vanilla");
         view.SetGameBranch("public");
-        view.SetSaveSyncPresentation(
-            UpToDateSavePresentation()
-        );
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
         foreach (var destination in Enum.GetValues<LauncherDestination>())
         {
@@ -921,29 +1061,33 @@ internal static class LauncherUiInteractionTest
         Press(root, "Sync now");
         Press(root, "Get saves from Steam");
         Press(root, "Send saves to Steam");
-        view.SetSaveSyncControlsDisabled(true);
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: true);
         Expect(FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
             "Profile copy remained available during synchronization.");
-        view.SetSaveSyncControlsDisabled(false);
+        Expect(FindVisibleButton(root, "Sync now").Disabled,
+            "Manual transfers remained available during another save operation.");
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
         Press(root, "Copy Vanilla to Modded");
         Expect(events.ProfileCopy == 1, "Profile copy callback was not invoked exactly once.");
         AssertSaveConfirmations(view, root);
         var syncToggle = FindUniqueVisibleNamed<CheckButton>(root, "SteamSaveSyncToggle");
-        var preferenceChanges = 0;
-        view.SaveSyncPreferenceChanged += () => preferenceChanges++;
+        Expect(syncToggle.ButtonPressed, "An enabled sync presentation left the sync toggle off.");
+        var preferenceChangesBefore = events.SaveSyncPreferenceChanges;
         syncToggle.ButtonPressed = false;
-        Expect(!STS2Mobile.Steam.SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
-            "Turning off Steam save sync did not persist the preference.");
-        view.SetSaveSyncPresentation(UpToDateSavePresentation());
+        Expect(events.LastSaveSyncPreference == false,
+            "Turning off Steam save sync did not reach the controller.");
+        view.SetSaveSyncPresentation(LauncherSaveSyncPresentation.Disabled(), busy: false);
         Expect(FindUniqueVisibleNamed<Label>(root, "SaveSyncHeadline").Text.Contains("sync is off"),
             "Disabled sync still displayed a cloud synchronization status.");
+        Expect(!syncToggle.ButtonPressed, "A disabled sync presentation left the sync toggle on.");
         Expect(FindVisibleButton(root, "Sync now").Disabled,
             "Disabled sync left manual transfers enabled.");
         Expect(!FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
             "Disabling cloud sync disabled local profile copying.");
         syncToggle.ButtonPressed = true;
-        Expect(preferenceChanges == 2, "Sync preference changes did not reach the view.");
-        view.SetSaveSyncPresentation(UpToDateSavePresentation());
+        Expect(events.SaveSyncPreferenceChanges - preferenceChangesBefore == 2 && events.LastSaveSyncPreference == true,
+            "Sync preference changes did not reach the controller.");
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
     }
 
     private static void AssertSaveState(
@@ -954,7 +1098,7 @@ internal static class LauncherUiInteractionTest
         bool detailsVisible
     )
     {
-        view.SetSaveSyncPresentation(presentation);
+        view.SetSaveSyncPresentation(presentation, busy: false);
         AssertVisibleLabelText(
             root,
             "SaveNamespaceExplanation",
@@ -1164,7 +1308,7 @@ internal static class LauncherUiInteractionTest
         buttons[0].EmitSignal(Button.SignalName.Pressed);
 
         view.SetStatus("Game startup failed last time.", LauncherStatusSeverity.Warning);
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         view.ShowHomeHelpAction();
         home = FindUniqueVisibleNamed<Control>(root, "HomeDestination");
         buttons = Descendants<Button>(home)
@@ -1188,7 +1332,7 @@ internal static class LauncherUiInteractionTest
         _ = FindUniqueVisibleNamed<Control>(root, "HelpDestination");
 
         view.SetStatus("Ready to play.", LauncherStatusSeverity.Ready);
-        view.ShowLaunchActions("Play", showUpdate: true);
+        view.ShowLaunchActions(showUpdate: true);
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
     }
 
@@ -1733,36 +1877,42 @@ internal static class LauncherUiInteractionTest
         Action<string> gameBranchChanged
     )
     {
-        view.WireEvents(
-            loginRequested: (_, _) => { },
-            codeSubmitted: _ => { },
-            downloadRequested: () => { },
-            gameBranchChanged: gameBranchChanged,
-            rendererModeChanged: mode => events.RendererModes.Add(mode),
-            launchPressed: () => events.Launch++,
-            retryPressed: () => events.Retry++,
-            checkForUpdatesPressed: () => events.CheckForUpdates++,
-            updateSelectedVersionPressed: () => events.UpdateSelectedVersion++,
-            refreshGameVersionsPressed: () => events.RefreshVersions++,
-            redownloadPressed: () => events.Redownload++,
-            diagnosticsPressed: () => events.Diagnostics++,
-            showLastErrorPressed: () => events.ShowLastError++,
-            copyRawLogPressed: () => events.CopyRawLog++,
-            safeLaunchPressed: () => events.SafeLaunch++,
-            saveSyncNowPressed: () => events.SaveSyncNow++,
-            savePullPressed: () => events.SaveGet++,
-            savePushPressed: () => events.SaveSend++,
-            workshopSyncPressed: () => { },
-            workshopClearPressed: () =>
+        view.WireEvents(new LauncherViewHandlers
+        {
+            LoginRequested = (_, _) => { },
+            CodeSubmitted = _ => { },
+            DownloadRequested = () => { },
+            GameBranchChanged = gameBranchChanged,
+            RendererModeChanged = mode => events.RendererModes.Add(mode),
+            LaunchPressed = () => events.Launch++,
+            SafeLaunchPressed = () => events.SafeLaunch++,
+            RetryPressed = () => events.Retry++,
+            CheckForUpdatesPressed = () => events.CheckForUpdates++,
+            UpdateSelectedVersionPressed = () => events.UpdateSelectedVersion++,
+            RefreshGameVersionsPressed = () => events.RefreshVersions++,
+            RedownloadPressed = () => events.Redownload++,
+            DiagnosticsPressed = () => events.Diagnostics++,
+            ShowLastErrorPressed = () => events.ShowLastError++,
+            CopyRawLogPressed = () => events.CopyRawLog++,
+            ReportBugPressed = () => events.ReportBug++,
+            CheckAppUpdatesPressed = () => events.AppUpdate++,
+            SaveSyncNowPressed = () => events.SaveSyncNow++,
+            SavePullPressed = () => events.SaveGet++,
+            SavePushPressed = () => events.SaveSend++,
+            SaveSyncPreferenceChanged = enabled =>
+            {
+                events.SaveSyncPreferenceChanges++;
+                events.LastSaveSyncPreference = enabled;
+            },
+            CopyVanillaToModdedPressed = () => events.ProfileCopy++,
+            WorkshopSyncPressed = () => { },
+            WorkshopClearPressed = () =>
                 LauncherWorkshopCoordinator.ShowRemoveDownloadedModsConfirmation(
                     view,
                     () => events.WorkshopRemove++
                 ),
-            modsSelectionChanged: () => events.ModsSelectionChanged++,
-            reportBugPressed: () => events.ReportBug++,
-            checkAppUpdatesPressed: () => events.AppUpdate++,
-            copyVanillaToModdedPressed: () => events.ProfileCopy++
-        );
+            ModsSelectionChanged = () => events.ModsSelectionChanged++,
+        });
     }
 
     private sealed class EventCounts
@@ -1786,5 +1936,7 @@ internal static class LauncherUiInteractionTest
         internal readonly List<string> RendererModes = new();
         internal int WorkshopRemove;
         internal int ModsSelectionChanged;
+        internal int SaveSyncPreferenceChanges;
+        internal bool? LastSaveSyncPreference;
     }
 }

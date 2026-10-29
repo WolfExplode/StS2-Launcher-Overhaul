@@ -35,27 +35,6 @@ internal static partial class LauncherMarkerFile
         return missingLineValue;
     }
 
-    internal static string? ReadOptionalValue(string path, string prefix)
-    {
-        try
-        {
-            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-                return null;
-
-            foreach (var line in File.ReadLines(path))
-            {
-                if (line.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-                    return line[prefix.Length..].Trim();
-            }
-        }
-        catch
-        {
-            return null;
-        }
-
-        return null;
-    }
-
     internal static IReadOnlyDictionary<string, string> ReadOptionalValues(
         string path,
         params string[] prefixes

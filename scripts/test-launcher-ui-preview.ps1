@@ -2,7 +2,8 @@ param(
     [string]$GodotPath = "",
     [string]$ImportVanillaSavesRoot = "",
     [string]$BaseGamePckPath = "",
-    [string]$SteamworksNetPath = ""
+    [string]$SteamworksNetPath = "",
+    [switch]$UiOnly
 )
 
 $ErrorActionPreference = "Stop"
@@ -35,7 +36,12 @@ foreach ($profile in @(
     & $runner @arguments
 }
 
-Write-Host "Launcher mod journey wiring passed."
+Write-Host "Launcher UI interaction checks passed."
+
+if ($UiOnly) {
+    Write-Host "UI-only run: mod runtime activation scenarios were not run."
+    return
+}
 
 if ([string]::IsNullOrWhiteSpace($ImportVanillaSavesRoot)) {
     throw "The focused offline suite requires one explicit ImportVanillaSavesRoot fixture."

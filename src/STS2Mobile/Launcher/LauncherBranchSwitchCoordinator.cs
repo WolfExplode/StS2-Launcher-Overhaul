@@ -3,6 +3,8 @@ namespace STS2Mobile.Launcher;
 internal sealed class LauncherBranchSwitchCoordinator
 {
     internal event System.Action GameBranchApplied;
+    private readonly System.Func<string> _selectedBranch;
+    private readonly System.Action<string> _setSelectedBranch;
     private readonly LauncherModel _model;
     private readonly LauncherView _view;
     private readonly LauncherVersionCoordinator _versions;
@@ -14,9 +16,13 @@ internal sealed class LauncherBranchSwitchCoordinator
         LauncherView view,
         LauncherVersionCoordinator versions,
         LauncherLaunchCoordinator launch,
-        LauncherDownloadCoordinator downloads
+        LauncherDownloadCoordinator downloads,
+        System.Func<string> selectedBranch,
+        System.Action<string> setSelectedBranch
     )
     {
+        _selectedBranch = selectedBranch;
+        _setSelectedBranch = setSelectedBranch;
         _model = model;
         _view = view;
         _versions = versions;
@@ -26,7 +32,7 @@ internal sealed class LauncherBranchSwitchCoordinator
 
     internal void GameBranchChanged(string branch)
     {
-        var previous = LauncherPreferences.ReadGameBranch();
+        var previous = _selectedBranch();
         if (string.Equals(previous, branch, System.StringComparison.OrdinalIgnoreCase))
             return;
 
@@ -70,6 +76,7 @@ internal sealed class LauncherBranchSwitchCoordinator
     private void ApplyGameBranchChanged(string previousBranch, string branch)
     {
         LauncherPreferences.SaveGameBranch(branch);
+        _setSelectedBranch(STS2Mobile.Steam.SteamGameBranch.Normalize(branch));
         GameBranchApplied?.Invoke();
         LauncherLaunchReadinessCache.Clear($"branch changed from {previousBranch} to {branch}");
         LauncherBranchAvailabilityStatus.Clear(_model.DataDir);
@@ -104,7 +111,6 @@ internal sealed class LauncherBranchSwitchCoordinator
                 ?? "Selected game version is not downloaded. Download game files to continue.",
             LauncherStatusSeverity.Warning
         );
-        _view.HideActions();
         _downloads.ShowDownloadReadyAction();
     }
 }

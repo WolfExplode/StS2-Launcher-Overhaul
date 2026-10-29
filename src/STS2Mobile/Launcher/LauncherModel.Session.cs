@@ -33,17 +33,6 @@ internal partial class LauncherModel
         _connectionResolved = true;
     }
 
-    internal string LoggedInStatus()
-        => $"Logged in as {AccountName}";
-
-    internal string WelcomeBackStatus()
-        => $"Welcome back, {AccountName}";
-
-    internal string SteamAccountStatus()
-        => string.IsNullOrWhiteSpace(AccountName)
-            ? "Sign in required"
-            : AccountName;
-
     internal string FailureStatus()
         => $"Error: {FailReason}";
 

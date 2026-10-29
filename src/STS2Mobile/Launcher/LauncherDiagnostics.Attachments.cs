@@ -53,7 +53,6 @@ internal static partial class LauncherDiagnostics
     {
         yield return new DiagnosticAttachment(StartupMarker(dataDir), 2048);
         yield return new DiagnosticAttachment(StartupContext(dataDir), 4096);
-        yield return new DiagnosticAttachment(MainMenuPreparation(dataDir), 4096);
         yield return new DiagnosticAttachment(PostStartupHeartbeat(dataDir), 4096);
         yield return new DiagnosticAttachment(PostStartupTrace(dataDir), 8192);
         yield return new DiagnosticAttachment(AppLifecycle(dataDir), 4096);
@@ -77,7 +76,6 @@ internal static partial class LauncherDiagnostics
     {
         yield return new DiagnosticAttachment(StartupMarker(dataDir), SmallAttachmentMaxChars);
         yield return new DiagnosticAttachment(StartupContext(dataDir), SmallAttachmentMaxChars);
-        yield return new DiagnosticAttachment(MainMenuPreparation(dataDir), SmallAttachmentMaxChars);
         yield return new DiagnosticAttachment(PostStartupHeartbeat(dataDir), SmallAttachmentMaxChars);
         yield return new DiagnosticAttachment(PostStartupTrace(dataDir), SmallAttachmentMaxChars);
         yield return new DiagnosticAttachment(AppLifecycle(dataDir), SmallAttachmentMaxChars);
@@ -377,7 +375,6 @@ internal static partial class LauncherDiagnostics
     private static DiagnosticFile GamePck(string dataDir) => new("Game PCK", LauncherGameFiles.PckPath(dataDir));
     private static DiagnosticFile GraphicsDevice(string dataDir) => new("Graphics device", Path.Combine(dataDir, LauncherStorageNames.GraphicsDevice));
     private static DiagnosticFile ManualSafeLaunchMarker(string dataDir) => new("Manual safe launch marker", Path.Combine(dataDir, LauncherStorageNames.ManualSafeLaunch));
-    private static DiagnosticFile MainMenuPreparation(string dataDir) => new("Main-menu preparation", Path.Combine(dataDir, LauncherStorageNames.MainMenuPreparation));
     private static DiagnosticFile LaunchAttempt(string dataDir) => new("Launch attempt", Path.Combine(dataDir, LauncherStorageNames.LaunchAttempt));
     private static DiagnosticFile StartupMarker(string dataDir) => new("Startup marker", Path.Combine(dataDir, LauncherStorageNames.StartupMarker));
     private static DiagnosticFile StartupContext(string dataDir) => new("Startup context", Path.Combine(dataDir, LauncherStorageNames.StartupContext));

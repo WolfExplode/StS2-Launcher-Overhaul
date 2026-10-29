@@ -18,7 +18,6 @@ internal sealed partial class AndroidJavaHttpMessageHandler : HttpMessageHandler
     private const string BodyFileProperty = "bodyFile";
     private const string ErrorProperty = "error";
     private const string HeadersProperty = "headers";
-    private const string HttpRequestBridgeMethod = "httpRequest";
     private const string ReasonProperty = "reason";
     private const string StatusProperty = "status";
 

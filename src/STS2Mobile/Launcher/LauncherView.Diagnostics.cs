@@ -8,8 +8,12 @@ internal sealed partial class LauncherView
     {
         DiagnosticsDrawer.Visible = true;
         SetDiagnosticsToggleText(DiagnosticsToggle, _profile, visible: true);
-        if (_profile.Compact)
-            ScrollCompactPrimaryTo(DiagnosticsDrawer);
+        // Defer until the drawer has a layout size, or the scroll target is stale.
+        Callable.From(() =>
+        {
+            if (GodotObject.IsInstanceValid(DiagnosticsDrawer) && DiagnosticsDrawer.IsVisibleInTree())
+                PrimaryScroll.EnsureControlVisible(DiagnosticsDrawer);
+        }).CallDeferred();
     }
 
     private const int CompactDiagnosticsLogFontSize = 15;

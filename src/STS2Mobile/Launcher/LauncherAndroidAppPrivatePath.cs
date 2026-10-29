@@ -29,18 +29,6 @@ internal static class LauncherAndroidAppPrivatePath
             && string.Equals(marker, alternateExpected, StringComparison.OrdinalIgnoreCase);
     }
 
-    internal static bool PathMatchesOrLeftAliasMatches(string left, string right, string dataDir)
-    {
-        left = NormalizePath(left);
-        right = NormalizePath(right);
-        if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        var leftAlias = AndroidAppPrivatePathAlias(left, dataDir);
-        return !string.IsNullOrWhiteSpace(leftAlias)
-            && string.Equals(leftAlias, right, StringComparison.OrdinalIgnoreCase);
-    }
-
     internal static bool NormalizedMarkerPathsEqual(string left, string right)
         => string.Equals(
             NormalizeMarkerPath(left),

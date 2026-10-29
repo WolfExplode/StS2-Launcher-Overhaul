@@ -5,37 +5,27 @@ internal readonly struct UpdateCheckViewUpdate
     private UpdateCheckViewUpdate(
         string logMessage = null,
         string status = null,
-        LauncherStatusSeverity? statusSeverity = null,
-        LauncherVersionPrimaryAction primaryAction =
-            LauncherVersionPrimaryAction.CheckForUpdates,
-        LauncherVersionCheckOutcome outcome = LauncherVersionCheckOutcome.None
+        LauncherStatusSeverity? statusSeverity = null
     )
     {
         LogMessage = logMessage;
         Status = status;
         StatusSeverity = statusSeverity;
-        PrimaryAction = primaryAction;
-        Outcome = outcome;
     }
 
     private string LogMessage { get; }
     private string Status { get; }
     private LauncherStatusSeverity? StatusSeverity { get; }
-    private LauncherVersionPrimaryAction PrimaryAction { get; }
-    private LauncherVersionCheckOutcome Outcome { get; }
 
     internal static UpdateCheckViewUpdate Completed(bool hasUpdate, string selectedVersion)
         => hasUpdate
             ? new(
                 logMessage: $"Update available for the selected Steam branch ({selectedVersion}).",
                 status: $"Update available for the selected Steam branch ({selectedVersion}). The new files will be checked before replacement.",
-                statusSeverity: LauncherStatusSeverity.Warning,
-                primaryAction: LauncherVersionPrimaryAction.UpdateSelectedVersion,
-                outcome: LauncherVersionCheckOutcome.UpdateAvailable
+                statusSeverity: LauncherStatusSeverity.Warning
             )
             : new(
-                logMessage: $"Selected Steam branch is up to date ({selectedVersion}).",
-                outcome: LauncherVersionCheckOutcome.UpToDate
+                logMessage: $"Selected Steam branch is up to date ({selectedVersion})."
             );
 
     internal static UpdateCheckViewUpdate Failed(string message, string selectedVersion)
@@ -66,7 +56,5 @@ internal readonly struct UpdateCheckViewUpdate
                     )
             );
 
-        view.SetVersionCheckOutcome(Outcome);
-        view.SetVersionPrimaryAction(PrimaryAction);
     }
 }

@@ -116,26 +116,6 @@ internal static partial class LauncherDiagnostics
         sb.AppendLine();
     }
 
-    internal static void WriteMainMenuPreparation(string classification, params string[] details)
-    {
-        var evidence = MainMenuPreparation(Godot.OS.GetDataDir());
-        try
-        {
-            evidence.WriteAllText(CreateTimestampedText("StS2 Launcher main-menu preparation", "UTC", sb =>
-            {
-                sb.AppendLine($"Classification: {CleanPostStartupValue(classification)}");
-                if (details == null)
-                    return;
-                foreach (var detail in details)
-                    sb.AppendLine(CleanPostStartupValue(detail));
-            }).Build());
-        }
-        catch (Exception ex)
-        {
-            PatchHelper.Log($"Main-menu preparation evidence failed: {ex.Message}");
-        }
-    }
-
     private static void AppendCachedGameVersions(StringBuilder sb, string dataDir)
     {
         var selectedBranch = SteamGameBranch.Normalize(LauncherPreferences.ReadGameBranch());
@@ -191,7 +171,6 @@ internal static partial class LauncherDiagnostics
     {
         yield return StartupMarker(dataDir);
         yield return StartupContext(dataDir);
-        yield return MainMenuPreparation(dataDir);
         yield return PostStartupHeartbeat(dataDir);
         yield return PostStartupTrace(dataDir);
         yield return RendererAttempt(dataDir);

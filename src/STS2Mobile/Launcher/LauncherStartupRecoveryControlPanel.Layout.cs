@@ -13,9 +13,9 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
             Layer = CanvasLayerIndex,
         };
 
-    private static ScrollContainer CreateScrollContainer()
+    private static ScrollContainer CreateScrollContainer(float scale)
     {
-        var scroll = new ScrollContainer
+        var scroll = new TouchScrollContainer(scale)
         {
             FollowFocus = true,
         };
@@ -29,10 +29,7 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
         var frame = new MarginContainer();
         frame.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         frame.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        frame.AddThemeConstantOverride("margin_left", margin);
-        frame.AddThemeConstantOverride("margin_right", margin);
-        frame.AddThemeConstantOverride("margin_top", RecoveryTopMargin(viewportSize));
-        frame.AddThemeConstantOverride("margin_bottom", margin);
+        frame.SetMargins(margin, RecoveryTopMargin(viewportSize), margin, margin);
         return frame;
     }
 
@@ -45,7 +42,7 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
             CustomMinimumSize = new Vector2(width, 0),
             SizeFlagsHorizontal = Control.SizeFlags.ShrinkCenter,
         };
-        box.AddThemeConstantOverride(ThemeSeparation, ContainerSeparation);
+        box.SetSeparation(ContainerSeparation);
         return box;
     }
 

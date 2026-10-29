@@ -59,10 +59,7 @@ internal static partial class LauncherStartupStatus
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        content.AddThemeConstantOverride(
-            LauncherComponentTheme.ThemeSeparation,
-            LauncherComponentTheme.ScaleInt(scale, AndroidPanelSeparation)
-        );
+        content.SetSeparation(LauncherComponentTheme.ScaleInt(scale, AndroidPanelSeparation));
         panel.AddChild(content);
 
         content.AddChild(CreateAndroidTitleLabel(scale));

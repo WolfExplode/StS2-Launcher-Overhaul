@@ -21,3 +21,7 @@ Use the smallest relevant behavior checks. Operational commands, fixture argumen
 The save tests use a small fake remote and do not prove Steam or Android transport. Desktop launcher interaction does not prove Android rendering or input. Report device and live-service results separately and only for the exact build tested.
 
 Use the existing component responsible for a behavior where it fits. When replacing an implementation, remove the old code and its unused callers, dependencies, tests and documentation together. Keep checks that serve a separate process or file-change boundary, and preserve distinct behavior coverage when consolidating tests. If a proposed deletion still needs evidence, record the missing evidence in the existing reduction inventory.
+
+## Documentation
+
+Documentation describes the current code and the current release. Do not keep historical records in the repository: dated investigations, superseded plans, audits, and notes or device results for earlier releases. Git history and the GitHub releases hold them. When a change makes a page out of date, update or delete it in the same change, and add one entry to [the changelog](CHANGELOG.md).

@@ -6,7 +6,7 @@ using STS2Mobile.Launcher.Sections;
 namespace STS2Mobile.Launcher;
 internal sealed partial class LauncherView
 {
-    private static (StyledPanel Panel, VBoxContainer Content, ColorRect AndroidCompositionRefresh) BuildShell(Control parent, LauncherLayoutProfile profile, Action<InputEvent> dismissKeyboard)
+    private static (StyledPanel Panel, VBoxContainer Content) BuildShell(Control parent, LauncherLayoutProfile profile, Action<InputEvent> dismissKeyboard)
     {
         parent.SetAnchorsPreset(Control.LayoutPreset.FullRect);
         var background = new ColorRect
@@ -24,20 +24,13 @@ internal sealed partial class LauncherView
         var content = new VBoxContainer();
         content.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         content.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
-        content.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactRootColumnSeparation : LauncherViewLayoutMetrics.RootColumnSeparation, profile.Scale));
+        content.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactRootColumnSeparation : LauncherViewLayoutMetrics.RootColumnSeparation, profile.Scale));
         panel.AddContent(content);
         content.AddChild(BuildBrandHeader(profile));
-        var androidCompositionRefresh = new ColorRect
-        {
-            Color = Colors.Transparent,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        androidCompositionRefresh.SetAnchorsPreset(Control.LayoutPreset.FullRect);
-        parent.AddChild(androidCompositionRefresh);
-        return (panel, content, androidCompositionRefresh);
+        return (panel, content);
     }
 
-    private static (RichTextLabel Log, VBoxContainer Drawer, Button Toggle) BuildLogColumn(LauncherLayoutProfile profile, VBoxContainer root, Action<InputEvent> dismissKeyboard)
+    private static (RichTextLabel Log, VBoxContainer Drawer, Button Toggle) BuildLogColumn(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
         var drawer = new VBoxContainer
@@ -46,7 +39,7 @@ internal sealed partial class LauncherView
             Visible = false,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        drawer.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, scale));
+        drawer.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         var toggle = new StyledButton(profile.Compact ? "" : DiagnosticsToggleText(visible: false), scale, fontSize: profile.Compact ? LauncherSectionMetrics.CompactDetailButtonFontSize : 14, height: profile.Compact ? LauncherSectionMetrics.CompactDrawerToggleHeight : 48);
         toggle.Name = "TechnicalDetailsToggle";
         LauncherButtonStyles.ApplySupportAction(toggle, scale);
@@ -63,7 +56,6 @@ internal sealed partial class LauncherView
         drawer.AddChild(title);
         var log = BuildLogView(profile);
         log.CustomMinimumSize = new Vector2(0, DiagnosticsLogHeight(profile));
-        log.GuiInput += input => dismissKeyboard(input);
         drawer.AddChild(log);
         root.AddChild(drawer);
         return (log, drawer, toggle);
@@ -119,7 +111,7 @@ internal sealed partial class LauncherView
             Columns = 5,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        navigation.AddThemeConstantOverride("h_separation", LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? 3 : 6, profile.Scale));
+        navigation.SetColumnSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? 3 : 6, profile.Scale));
         frame.AddChild(navigation);
         string[] labels = ["Home", "Saves", "Versions", "Mods", "Help"];
         var buttons = new Button[labels.Length];
@@ -162,14 +154,13 @@ internal sealed partial class LauncherView
         _panel.UpdateSafeAreaContentInsets(obscuredLeft, obscuredTop, obscuredRight);
         var bottomInset = obscuredBottom + LauncherViewLayoutMetrics.ScaleInt(4, _profile.Scale);
         _destinationSafeAreaSpacer.CustomMinimumSize = new Vector2(0, bottomInset);
-        RequestAndroidCompositionRefresh();
         GD.Print($"Launcher safe area: viewport={viewportSize} safe={safeArea} " + $"insets=({obscuredLeft},{obscuredTop},{obscuredRight},{obscuredBottom})");
     }
 
     private static LauncherViewPrimaryBody BuildPrimaryColumnBody(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
-        var leftScroll = new ScrollContainer
+        var leftScroll = new TouchScrollContainer(scale)
         {
             Name = "LauncherPrimaryScroll",
             HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled,
@@ -185,7 +176,7 @@ internal sealed partial class LauncherView
         var left = new VBoxContainer();
         left.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         left.SizeFlagsVertical = Control.SizeFlags.ShrinkBegin;
-        left.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
+        left.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
         leftFrame.AddChild(left);
         return new LauncherViewPrimaryBody(leftScroll, left);
     }
@@ -193,14 +184,6 @@ internal sealed partial class LauncherView
     private static LauncherViewPrimaryColumn BuildPrimaryColumn(LauncherLayoutProfile profile, VBoxContainer root)
     {
         var scale = profile.Scale;
-        Button compactCurrentTaskButton = null;
-        GridContainer compactStickyTaskHeader = null;
-        Control compactWorkflowStrip = null;
-        var workflowStepNumberLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepDetailLabels = Array.Empty<Components.StyledLabel>();
-        var workflowStepAccents = Array.Empty<ColorRect>();
-        var workflowStepButtons = Array.Empty<Button>();
         var primaryBody = BuildPrimaryColumnBody(profile, root);
         var left = primaryBody.Body;
         var status = BuildPrimaryStatus(profile);
@@ -212,27 +195,28 @@ internal sealed partial class LauncherView
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        homeSections.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
+        homeSections.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(profile.Compact ? LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation : LauncherViewLayoutMetrics.PrimaryColumnSeparation, scale));
         left.AddChild(homeSections);
         homeSections.AddChild(firstRunGuide);
         var login = new LoginSection(scale, profile.Compact);
         homeSections.AddChild(login);
-        var code = new CodeSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var code = new CodeSection(scale, profile.Compact);
         homeSections.AddChild(code);
-        var download = new DownloadSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var download = new DownloadSection(scale, profile.Compact);
         homeSections.AddChild(download);
-        var actions = new ActionSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var actions = new ActionSection(scale, profile.Compact);
         left.AddChild(actions);
-        VBoxContainer compactDiagnosticsHost = null;
-        if (profile.Compact)
-        {
-            compactDiagnosticsHost = new VBoxContainer();
-            compactDiagnosticsHost.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-            compactDiagnosticsHost.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(LauncherViewLayoutMetrics.CompactPrimaryColumnSeparation, scale));
-            left.AddChild(compactDiagnosticsHost);
-        }
-
-        return new LauncherViewPrimaryColumn(status.Phase, status.Message, status.Capsule, secondaryStatus.Banner, secondaryStatus.Severity, secondaryStatus.Message, secondaryStatus.Accent, status.CompactDetailButton, status.CompactDetailCue, status.Accent, workflowStepNumberLabels, workflowStepLabels, workflowStepDetailLabels, workflowStepAccents, workflowStepButtons, compactStickyTaskHeader, compactWorkflowStrip, compactCurrentTaskButton, primaryBody.PrimaryScroll, homeSections, firstRunGuide, login, code, download, actions, compactDiagnosticsHost);
+        return new LauncherViewPrimaryColumn(
+            Status: status,
+            SecondaryStatus: secondaryStatus,
+            PrimaryScroll: primaryBody.PrimaryScroll,
+            HomeSections: homeSections,
+            FirstRunGuide: firstRunGuide,
+            Login: login,
+            Code: code,
+            Download: download,
+            Actions: actions
+        );
     }
 
     private static LauncherViewPrimaryStatus BuildPrimaryStatus(LauncherLayoutProfile profile)
@@ -250,15 +234,8 @@ internal sealed partial class LauncherView
         var statusAccent = new ColorRect();
         statusAccent.Color = LauncherPortalStatusFormatter.ColorFor(initialSeverity);
         var statusCapsule = BuildStatusCapsule(statusPhaseLabel, statusLabel, statusAccent, profile);
-        return new LauncherViewPrimaryStatus(statusPhaseLabel, statusLabel, statusAccent, statusCapsule.Capsule, statusCapsule.CompactDetailButton, statusCapsule.CompactDetailCue);
+        return new LauncherViewPrimaryStatus(statusPhaseLabel, statusLabel, statusAccent, statusCapsule.Capsule, statusCapsule.CompactDetailButton);
     }
-
-    private const int CompactBottomScrollSpacerHeight = 180;
-    private static Control BuildCompactBottomScrollSpacer(float scale) => new Control
-    {
-        CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(CompactBottomScrollSpacerHeight, scale)),
-        MouseFilter = Control.MouseFilterEnum.Ignore,
-    };
 }
 
 internal readonly struct LauncherViewPrimaryBody
@@ -273,82 +250,23 @@ internal readonly struct LauncherViewPrimaryBody
     internal VBoxContainer Body { get; }
 }
 
-internal readonly struct LauncherViewPrimaryColumn
-{
-    internal LauncherViewPrimaryColumn(StyledLabel statusPhase, StyledLabel status, Control statusCapsule, Control secondaryStatusBanner, StyledLabel secondaryStatusSeverity, StyledLabel secondaryStatusMessage, ColorRect secondaryStatusAccent, Button compactStatusDetailsButton, StyledLabel compactStatusDetailsCue, ColorRect statusAccent, StyledLabel[] workflowStepNumberLabels, StyledLabel[] workflowStepLabels, StyledLabel[] workflowStepDetailLabels, ColorRect[] workflowStepAccents, Button[] workflowStepButtons, GridContainer compactStickyTaskHeader, Control compactWorkflowStrip, Button compactCurrentTaskButton, ScrollContainer primaryScroll, VBoxContainer homeSections, Control firstRunGuide, LoginSection login, CodeSection code, DownloadSection download, ActionSection actions, VBoxContainer compactDiagnosticsHost)
-    {
-        StatusPhase = statusPhase;
-        Status = status;
-        StatusCapsule = statusCapsule;
-        SecondaryStatusBanner = secondaryStatusBanner;
-        SecondaryStatusSeverity = secondaryStatusSeverity;
-        SecondaryStatusMessage = secondaryStatusMessage;
-        SecondaryStatusAccent = secondaryStatusAccent;
-        CompactStatusDetailsButton = compactStatusDetailsButton;
-        CompactStatusDetailsCue = compactStatusDetailsCue;
-        StatusAccent = statusAccent;
-        WorkflowStepNumberLabels = workflowStepNumberLabels;
-        WorkflowStepLabels = workflowStepLabels;
-        WorkflowStepDetailLabels = workflowStepDetailLabels;
-        WorkflowStepAccents = workflowStepAccents;
-        WorkflowStepButtons = workflowStepButtons;
-        CompactStickyTaskHeader = compactStickyTaskHeader;
-        CompactWorkflowStrip = compactWorkflowStrip;
-        CompactCurrentTaskButton = compactCurrentTaskButton;
-        PrimaryScroll = primaryScroll;
-        HomeSections = homeSections;
-        FirstRunGuide = firstRunGuide;
-        Login = login;
-        Code = code;
-        Download = download;
-        Actions = actions;
-        CompactDiagnosticsHost = compactDiagnosticsHost;
-    }
+internal readonly record struct LauncherViewPrimaryColumn(
+    LauncherViewPrimaryStatus Status,
+    LauncherViewSecondaryStatus SecondaryStatus,
+    ScrollContainer PrimaryScroll,
+    VBoxContainer HomeSections,
+    Control FirstRunGuide,
+    LoginSection Login,
+    CodeSection Code,
+    DownloadSection Download,
+    ActionSection Actions
+);
 
-    internal StyledLabel StatusPhase { get; }
-    internal StyledLabel Status { get; }
-    internal Control StatusCapsule { get; }
-    internal Control SecondaryStatusBanner { get; }
-    internal StyledLabel SecondaryStatusSeverity { get; }
-    internal StyledLabel SecondaryStatusMessage { get; }
-    internal ColorRect SecondaryStatusAccent { get; }
-    internal Button CompactStatusDetailsButton { get; }
-    internal StyledLabel CompactStatusDetailsCue { get; }
-    internal ColorRect StatusAccent { get; }
-    internal StyledLabel[] WorkflowStepNumberLabels { get; }
-    internal StyledLabel[] WorkflowStepLabels { get; }
-    internal StyledLabel[] WorkflowStepDetailLabels { get; }
-    internal ColorRect[] WorkflowStepAccents { get; }
-    internal Button[] WorkflowStepButtons { get; }
-    internal GridContainer CompactStickyTaskHeader { get; }
-    internal Control CompactWorkflowStrip { get; }
-    internal Button CompactCurrentTaskButton { get; }
-    internal ScrollContainer PrimaryScroll { get; }
-    internal VBoxContainer HomeSections { get; }
-    internal Control FirstRunGuide { get; }
-    internal LoginSection Login { get; }
-    internal CodeSection Code { get; }
-    internal DownloadSection Download { get; }
-    internal ActionSection Actions { get; }
-    internal VBoxContainer CompactDiagnosticsHost { get; }
-}
-
-internal readonly struct LauncherViewPrimaryStatus
-{
-    internal LauncherViewPrimaryStatus(StyledLabel phase, StyledLabel message, ColorRect accent, Control capsule, Button compactDetailButton, StyledLabel compactDetailCue)
-    {
-        Phase = phase;
-        Message = message;
-        Accent = accent;
-        Capsule = capsule;
-        CompactDetailButton = compactDetailButton;
-        CompactDetailCue = compactDetailCue;
-    }
-
-    internal StyledLabel Phase { get; }
-    internal StyledLabel Message { get; }
-    internal ColorRect Accent { get; }
-    internal Control Capsule { get; }
-    internal Button CompactDetailButton { get; }
-    internal StyledLabel CompactDetailCue { get; }
-}
+// CompactDetailButton is null outside the compact layout.
+internal readonly record struct LauncherViewPrimaryStatus(
+    StyledLabel Phase,
+    StyledLabel Message,
+    ColorRect Accent,
+    Control Capsule,
+    Button CompactDetailButton
+);

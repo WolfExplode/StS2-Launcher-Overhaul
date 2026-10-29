@@ -3,7 +3,7 @@ using Godot;
 
 namespace STS2Mobile.Launcher.Components;
 
-internal sealed class StyledLineEdit : LineEdit
+internal sealed partial class StyledLineEdit : LineEdit
 {
     private readonly DisplayServer.VirtualKeyboardType _keyboardType;
 
