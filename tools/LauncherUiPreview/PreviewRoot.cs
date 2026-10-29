@@ -209,12 +209,28 @@ public partial class PreviewRoot : Control
         {
             viewport.Size = size;
             _previewRoot.Size = size;
+            // On a phone the launcher's parent resizes first, and the keyboard
+            // shift is reapplied every frame, including before the view sees
+            // the new size.
+            _previewView.UpdateKeyboardOffset();
+            await NextFrames(2);
+            _previewView.UpdateKeyboardOffset();
             _previewView.UpdateViewportSize(size);
             await NextFrames(8);
+            _previewView.UpdateKeyboardOffset();
+            await NextFrames(2);
             var panel = _previewRoot.GetChildren().OfType<STS2Mobile.Launcher.Components.StyledPanel>().Single();
             GD.Print($"VIEWPORT_RESTORE size={size} root={_previewRoot.GetRect()} panel={panel.GetRect()}");
             if (panel.Position.DistanceSquaredTo(Vector2.Zero) > 1f || panel.Size.DistanceSquaredTo(size) > 1f)
                 throw new InvalidOperationException($"Launcher panel displaced after viewport restore: {panel.GetRect()} viewport={size}");
+            // Rows were built for the first size; each must still fit after rotating.
+            foreach (var destination in Enum.GetValues<LauncherDestination>())
+            {
+                _previewView.SelectDestination(destination);
+                await NextFrames(4);
+                AssertHorizontalFit((ScrollContainer)_previewRoot.FindChild("LauncherPrimaryScroll", true, false));
+            }
+            _previewView.SelectDestination(LauncherDestination.Home);
         }
     }
 

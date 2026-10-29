@@ -36,7 +36,6 @@ internal sealed partial class LauncherView
     internal Node LaunchLifetimeHost => _panel;
 
     private readonly ColorRect _androidCompositionRefresh;
-    private float _panelBaseY;
     private float _keyboardOffset;
     private readonly float _scale;
     private readonly LauncherLayoutProfile _profile;
@@ -58,7 +57,6 @@ internal sealed partial class LauncherView
         _parent = parent;
         _panel = shell.Panel;
         _androidCompositionRefresh = shell.AndroidCompositionRefresh;
-        _panelBaseY = shell.Panel.Position.Y;
         _scale = profile.Scale;
         _profile = profile;
         var primary = BuildPrimaryColumn(profile, shell.Content);

@@ -208,11 +208,11 @@ internal sealed partial class LauncherView
         homeSections.AddChild(firstRunGuide);
         var login = new LoginSection(scale, profile.Compact);
         homeSections.AddChild(login);
-        var code = new CodeSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var code = new CodeSection(scale, profile.Compact);
         homeSections.AddChild(code);
         var download = new DownloadSection(scale, profile.Compact, profile.CompactStackedActionRows);
         homeSections.AddChild(download);
-        var actions = new ActionSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var actions = new ActionSection(scale, profile.Compact);
         left.AddChild(actions);
         return new LauncherViewPrimaryColumn(
             Status: status,

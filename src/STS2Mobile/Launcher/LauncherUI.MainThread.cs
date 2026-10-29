@@ -9,7 +9,6 @@ internal sealed partial class LauncherUI
     {
         AndroidBridgeDispatcher.Pump();
         DrainMainThreadActions();
-        SyncViewportSize();
         _view?.UpdateSystemInsets();
         _view?.UpdateKeyboardOffset();
         _view?.AdvanceAndroidCompositionRefresh();

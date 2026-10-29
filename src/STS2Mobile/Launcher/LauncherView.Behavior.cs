@@ -7,8 +7,6 @@ internal sealed partial class LauncherView
     internal void UpdateViewportSize(Vector2 viewportSize)
     {
         _panel.UpdateSizeFromViewport(viewportSize, _profile.PanelHeightRatio);
-        _panelBaseY = 0f;
-        UpdateCompactSectionResponsiveRows(viewportSize);
         UpdateDiagnosticsLogViewport(viewportSize);
         UpdateKeyboardOffset();
         RequestAndroidCompositionRefresh();
@@ -43,7 +41,7 @@ internal sealed partial class LauncherView
             var scale = windowSize.Y > 0 ? vpSize.Y / windowSize.Y : 1f;
             var maxOffset = Math.Max(0f, vpSize.Y * 0.42f);
             _keyboardOffset = Math.Min(kbHeight * scale * 0.85f, maxOffset);
-            _panel.Position = new Vector2(_panel.Position.X, _panelBaseY - _keyboardOffset);
+            _panel.SetVerticalShift(_keyboardOffset);
             ScrollFocusedInputAboveKeyboard();
             return;
         }
@@ -51,7 +49,7 @@ internal sealed partial class LauncherView
         _keyboardOffset = 0f;
         _keyboardFocusScrollTarget = null;
         _keyboardFocusScrollOffset = -1f;
-        _panel.Position = new Vector2(_panel.Position.X, _panelBaseY);
+        _panel.SetVerticalShift(0f);
     }
 
     private void ScrollFocusedInputAboveKeyboard()
@@ -101,13 +99,5 @@ internal sealed partial class LauncherView
                 AndroidGodotAppBridge.NotifyLauncherTextEditingRequested(false);
             }
         }
-    }
-
-    private void UpdateCompactSectionResponsiveRows(Vector2 viewportSize)
-    {
-        if (!_profile.Compact || !GodotObject.IsInstanceValid(Code))
-            return;
-        var profile = viewportSize.X > 0f && viewportSize.Y > 0f ? LauncherLayoutProfile.ForViewport(viewportSize, _profile.TouchOptimized) : _profile;
-        Code.UpdateViewportProfile(profile);
     }
 }

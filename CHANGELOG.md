@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 - Launcher rotation layout
+
+- Rotating the phone no longer leaves the launcher panel shifted sideways and cut off. The keyboard shift wrote the panel's position every frame, which fixed its current width into its layout; if that ran while the panel still had the previous orientation's width, the panel kept that width and centred the content within it. The panel and launcher root now stay anchored to the screen, and the keyboard shift moves only the top and bottom edges.
+- Button rows (save actions, mod actions, version controls, the Steam Guard code row and Help diagnostics) choose side-by-side or stacked from their current width on every resize, instead of once from the orientation the launcher started in.
+- Checked by compiling against stubbed game types. The desktop preview's rotation check now applies the keyboard shift between resizes and checks every page fits after each rotation, but was not run.
+
 ## 2026-10-29 - Launcher touch scrolling
 
 - A finger drag now scrolls launcher pages, dialogs and the startup recovery panel from anywhere, including on buttons, toggles, panels and the diagnostics log. Before, panels and buttons stopped the drag from reaching the scroll area, so only gaps between them scrolled. Starting a drag on a button no longer presses it. Text fields keep their own text-selection drag.

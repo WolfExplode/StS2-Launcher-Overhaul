@@ -72,15 +72,19 @@ internal sealed class StyledPanel : CenterContainer
         => UpdateSizeFromViewport(vpSize, 0.85f);
 
     internal void UpdateSizeFromViewport(Vector2 vpSize, float heightRatio)
-    {
-        _panelContainer.CustomMinimumSize = new Vector2(
+        => _panelContainer.CustomMinimumSize = new Vector2(
             ConstrainWidth(vpSize),
             ConstrainHeight(vpSize, heightRatio)
         );
-        // A parent resize can arrive before the old panel minimum is reduced.
-        // Restore the full rect after changing that minimum so a portrait height
-        // cannot remain as a landscape offset (or vice versa).
-        SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+
+    // Moves the panel up while keeping it anchored to the full parent rect.
+    // Never set Position or Size here: both convert the current rect into
+    // offsets, so a moment when the panel is wider than the screen (the old
+    // orientation's minimum during a rotation) would become permanent.
+    internal void SetVerticalShift(float shift)
+    {
+        OffsetTop = -shift;
+        OffsetBottom = -shift;
     }
 
     private float ConstrainWidth(Vector2 vpSize)

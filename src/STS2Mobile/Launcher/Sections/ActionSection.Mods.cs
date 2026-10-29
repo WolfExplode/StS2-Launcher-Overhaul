@@ -255,7 +255,7 @@ internal sealed partial class ActionSection
         var group = BuildActionGroup(scale);
         group.Name = "ModsControls";
         group.Visible = false;
-        Container modeParent = compact && !_compactStackedActionRows ? BuildCompactActionRow(group, scale, compactStackedActionRows: false) : group;
+        Container modeParent = compact ? BuildCompactActionRow(group, scale) : group;
         var playVanillaButton = AddActionButton(modeParent, "Vanilla", scale, () => SetModPlayMode(LauncherModPlayMode.Vanilla));
         LauncherButtonStyles.ApplySupportAction(playVanillaButton, scale);
         var playModdedButton = AddActionButton(modeParent, "Modded", scale, () => SetModPlayMode(LauncherModPlayMode.Modded));
@@ -274,7 +274,7 @@ internal sealed partial class ActionSection
         };
         modsList.AddThemeConstantOverride("separation", Math.Max(3, (int)(4 * scale)));
         group.AddChild(modsList);
-        Container actionsParent = compact && !_compactStackedActionRows ? BuildCompactActionRow(group, scale, compactStackedActionRows: false) : group;
+        Container actionsParent = compact ? BuildCompactActionRow(group, scale) : group;
         var workshopSyncButton = AddActionButton(actionsParent, "Update Workshop mods", scale, () => WorkshopSyncPressed?.Invoke());
         workshopSyncButton.AccessibilityName = "Update Workshop mods";
         LauncherButtonStyles.ApplyPrimaryAction(workshopSyncButton, scale);

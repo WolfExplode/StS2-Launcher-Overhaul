@@ -138,13 +138,10 @@ internal sealed partial class ActionSection
         };
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(title);
-        var actions = new GridContainer
+        var actions = new ResponsiveGrid(LauncherViewLayoutMetrics.ScaleInt(6, _scale), maxColumns: 2)
         {
             Name = "HelpDiagnosticsActions",
-            Columns = _compactStackedActionRows ? 1 : 2,
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        actions.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
         MoveTo(actions, _diagnosticsButton);
         var reportBug = new StyledButton("Report a bug on GitHub", _scale, height: LauncherSectionMetrics.SecondaryButtonHeight)
         {

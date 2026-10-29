@@ -113,11 +113,7 @@ internal sealed partial class ActionSection
         syncNow.AccessibilityName = "Sync now";
         LauncherButtonStyles.ApplyPrimaryAction(syncNow, scale);
 
-        var manualActions = BuildCompactActionRow(
-            actions,
-            scale,
-            _compactStackedActionRows
-        );
+        var manualActions = BuildCompactActionRow(actions, scale);
         manualActions.Name = "SaveManualActions";
 
         var pull = AddActionButton(

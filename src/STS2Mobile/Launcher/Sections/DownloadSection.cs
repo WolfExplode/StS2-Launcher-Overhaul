@@ -61,7 +61,7 @@ internal sealed partial class DownloadSection : VBoxContainer
         _compactSelectedVersionLabel = BuildCompactSelectedVersionLabel(scale, compact);
         _compactSelectedVersionPanel.AddChild(_compactSelectedVersionLabel);
         _branchDropdown = BuildBranchDropdown(scale, compact);
-        _compactVersionControlsRow = compact ? BuildCompactVersionControlsRow(scale, _compactStackedActionRows) : null;
+        _compactVersionControlsRow = compact ? BuildCompactVersionControlsRow(scale) : null;
         AddBranchDropdownToLayout();
         _refreshBranchesButton = BuildRefreshBranchesButton(scale, compact);
         AddRefreshBranchesButtonToLayout();

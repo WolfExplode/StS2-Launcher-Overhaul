@@ -42,7 +42,6 @@ internal sealed partial class ActionSection : VBoxContainer
     private readonly Button _retryButton;
     private readonly float _scale;
     private readonly bool _compact;
-    private readonly bool _compactStackedActionRows;
     private readonly VBoxContainer _versionSelectionGroup;
     private readonly OptionButton _branchDropdown;
     private readonly Label _branchHelpLabel;
@@ -222,11 +221,10 @@ internal sealed partial class ActionSection : VBoxContainer
 
     private static string CompactSupportToolText(string text, string detail) => $"{text}\n{detail}";
     private void SetCompactActionButtonText(Button button, string text) => CompactButtonDetailLabels.Apply(button, text, _scale, _compact, CompactActionButtonLabels);
-    internal ActionSection(float scale, bool compact = false, bool compactStackedActionRows = false)
+    internal ActionSection(float scale, bool compact = false)
     {
         _scale = scale;
         _compact = compact;
-        _compactStackedActionRows = compactStackedActionRows;
         var sectionHeader = LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Play", "Launch the game, choose a version, and manage mods.", LauncherComponentTheme.OrangeHot, compact, "Play safely");
         var toggleRadius = (int)(10 * scale);
         var toggleBorderWidth = Math.Max(1, (int)(2 * scale));
@@ -308,11 +306,9 @@ internal sealed partial class ActionSection : VBoxContainer
         return group;
     }
 
-    private static Container BuildCompactActionRow(Container parent, float scale, bool compactStackedActionRows)
+    private static Container BuildCompactActionRow(Container parent, float scale)
     {
-        Container row = compactStackedActionRows ? new VBoxContainer() : new HBoxContainer();
-        row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactActionSeparation, scale));
+        var row = new ResponsiveGrid(LauncherViewLayoutMetrics.ScaleInt(CompactActionSeparation, scale));
         parent.AddChild(row);
         return row;
     }
