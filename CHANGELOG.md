@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Make confirmation dialogs adapt to the screen
+
+- Confirmation actions use the buttons' own pressed signals. The dialog resizes its scrollable message and uses a responsive action grid when the viewport changes.
+- The full launcher preview suite passed, including ImportVanillaSaves. Physical taps and rotation with a dialog open have not been separately verified.
+
 ## 2026-10-29 - Keep version summary readable after rotation
 
 - The compact install section now uses a wrapping, two-line version summary in either orientation instead of selecting a text policy from the startup viewport.
