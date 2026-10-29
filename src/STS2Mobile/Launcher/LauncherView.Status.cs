@@ -137,19 +137,13 @@ internal sealed partial class LauncherView
         panel.AddChild(body);
         statusAccent.CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(CompactStatusAccentHeight, scale));
         body.AddChild(statusAccent);
-        var headline = new GridContainer
-        {
-            SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-        };
         var phasePanel = new PanelContainer();
-        phasePanel.SizeFlagsVertical = Control.SizeFlags.ExpandFill;
+        phasePanel.SizeFlagsVertical = Control.SizeFlags.Fill;
         phasePanel.AddThemeStyleboxOverride(LauncherComponentTheme.Panel, BuildStatusPhaseStyle(scale, compact: true));
         statusPhaseLabel.VerticalAlignment = VerticalAlignment.Center;
         phasePanel.AddChild(statusPhaseLabel);
-        headline.AddChild(phasePanel);
-        headline.Columns = 1;
         phasePanel.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddChild(headline);
+        body.AddChild(phasePanel);
         var detailButton = BuildCompactStatusDetailButton(scale);
         // Container-managed text contributes its wrapped height to the status panel.
         // A label anchored inside a Button can collapse to zero width on phones.

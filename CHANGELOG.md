@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-29 - Simplify the compact status headline
+
+- Removed the single-child grid around the status phase and kept its previous non-expanding vertical behavior. The full launcher preview suite passed; the revised status layout has not been visually checked on a device.
+
 ## 2026-10-29 - Make confirmation dialogs adapt to the screen
 
 - Confirmation actions use the buttons' own pressed signals. The dialog resizes its scrollable message and uses a responsive action grid when the viewport changes.
