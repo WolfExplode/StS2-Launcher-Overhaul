@@ -9,9 +9,7 @@ namespace STS2Mobile.Launcher.Sections;
 internal sealed partial class DownloadSection : VBoxContainer
 {
     private const string DefaultDownloadButtonText = "Download Game Files";
-    private const int CompactSelectedVersionBranchLimit = 18;
     private const int CompactSelectedVersionStackedBranchLimit = 28;
-    private const int CompactVersionHelpBranchLimit = 22;
     private const int CompactVersionHelpStackedBranchLimit = 30;
     private const int CompactVersionHelpHeight = 54;
     private const int CompactVersionHelpFontSize = LauncherSectionMetrics.CompactVersionSummaryFontSize;
@@ -44,14 +42,12 @@ internal sealed partial class DownloadSection : VBoxContainer
     private readonly List<LauncherBranchCatalog.BranchOption> _branchOptions = new();
     private readonly float _scale;
     private readonly bool _compact;
-    private readonly bool _compactStackedActionRows;
     private bool _branchDetailsExpanded;
     private LauncherVersionsState _versions = LauncherVersionsState.Initial;
-    internal DownloadSection(float scale, bool compact = false, bool compactStackedActionRows = false)
+    internal DownloadSection(float scale, bool compact = false)
     {
         _scale = scale;
         _compact = compact;
-        _compactStackedActionRows = compact && compactStackedActionRows;
         LauncherSectionSetup.ConfigureHiddenSection(this, scale, "Game Install", "Choose the Steam branch, download files, and keep separate installs isolated.", LauncherComponentTheme.CyanAccent, compact, "Local files");
         _branchDetailsToggle = BuildBranchDetailsToggle(scale, compact);
         AddChild(_branchDetailsToggle);

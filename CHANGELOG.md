@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 - Keep version summary readable after rotation
+
+- The compact install section now uses a wrapping, two-line version summary in either orientation instead of selecting a text policy from the startup viewport.
+- The full launcher preview suite passed with the ImportVanillaSaves fixture, and dev.10 was installed in place on the Galaxy S23. The phone screen was unavailable for the requested portrait and landscape visual comparison, so that check remains pending.
+
 ## 2026-10-29 - Apply Android display changes only when needed
 
 - The launcher now compares keyboard height, viewport and window size, safe area and focus before updating insets or keyboard layout. Unchanged frames no longer rewrite the panel shift. A resize still recalculates layout, and changing focus while the keyboard is open can reveal the new field.

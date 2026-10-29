@@ -210,7 +210,7 @@ internal sealed partial class LauncherView
         homeSections.AddChild(login);
         var code = new CodeSection(scale, profile.Compact);
         homeSections.AddChild(code);
-        var download = new DownloadSection(scale, profile.Compact, profile.CompactStackedActionRows);
+        var download = new DownloadSection(scale, profile.Compact);
         homeSections.AddChild(download);
         var actions = new ActionSection(scale, profile.Compact);
         left.AddChild(actions);
