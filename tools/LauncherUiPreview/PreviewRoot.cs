@@ -340,7 +340,8 @@ public partial class PreviewRoot : Control
                 "Synced",
                 "Up to date",
                 "Up to date"
-            )
+            ),
+            busy: false
         );
         view.SetStatus("Ready to play.", LauncherStatusSeverity.Ready);
         view.ShowLaunchActions(showUpdate: true);

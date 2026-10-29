@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-29 - Saves page state
+
+- The Saves page is drawn in one place from the sync setting, the running operation, an unresolved conflict and the sync service's saved status. Before, the controller kept its own copy of the page and a "before this operation" copy to restore. Both are removed, along with three separate checks of the sync setting in the view.
+- A sync conflict now stays on the page until a sync resolves it. Before, signing in or retrying the session redrew the page from the saved status and could show "Up to date" over an unresolved conflict.
+- A failed sync now shows the failure the service recorded (offline, sign-in required or failed), instead of a second mapping in the controller that could disagree with the page shown after the next refresh.
+- The sync toggle only reports the change; the controller saves the setting and redraws the page.
+- The Redownload action on Home is in a vertical box, so its spacing setting takes effect. A one-column grid ignored it.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test was updated but not run.
+
 ## 2026-10-29 - Launcher rotation layout
 
 - Rotating the phone no longer leaves the launcher panel shifted sideways and cut off. The keyboard shift wrote the panel's position every frame, which fixed its current width into its layout; if that ran while the panel still had the previous orientation's width, the panel kept that width and centred the content within it. The panel and launcher root now stay anchored to the screen, and the keyboard shift moves only the top and bottom edges.

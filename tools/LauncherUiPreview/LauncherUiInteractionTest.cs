@@ -831,13 +831,12 @@ internal static class LauncherUiInteractionTest
                 "Changes queued",
                 "Changes queued",
                 "Waiting to sync"
-            )
+            ),
+            busy: false
         );
         AssertReadyHome(root, "Beta · Vanilla saves · Changes queued", "Play Vanilla");
         view.SetGameBranch("public");
-        view.SetSaveSyncPresentation(
-            UpToDateSavePresentation()
-        );
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
         AssertReadyHome(root, "Public · Vanilla saves · Synced", "Play Vanilla");
         foreach (var destination in Enum.GetValues<LauncherDestination>())
         {
@@ -980,28 +979,33 @@ internal static class LauncherUiInteractionTest
         Press(root, "Sync now");
         Press(root, "Get saves from Steam");
         Press(root, "Send saves to Steam");
-        view.SetSaveSyncControlsDisabled(true);
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: true);
         Expect(FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
             "Profile copy remained available during synchronization.");
-        view.SetSaveSyncControlsDisabled(false);
+        Expect(FindVisibleButton(root, "Sync now").Disabled,
+            "Manual transfers remained available during another save operation.");
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
         Press(root, "Copy Vanilla to Modded");
         Expect(events.ProfileCopy == 1, "Profile copy callback was not invoked exactly once.");
         AssertSaveConfirmations(view, root);
         var syncToggle = FindUniqueVisibleNamed<CheckButton>(root, "SteamSaveSyncToggle");
+        Expect(syncToggle.ButtonPressed, "An enabled sync presentation left the sync toggle off.");
         var preferenceChangesBefore = events.SaveSyncPreferenceChanges;
         syncToggle.ButtonPressed = false;
-        Expect(!STS2Mobile.Steam.SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
-            "Turning off Steam save sync did not persist the preference.");
-        view.SetSaveSyncPresentation(UpToDateSavePresentation());
+        Expect(events.LastSaveSyncPreference == false,
+            "Turning off Steam save sync did not reach the controller.");
+        view.SetSaveSyncPresentation(LauncherSaveSyncPresentation.Disabled(), busy: false);
         Expect(FindUniqueVisibleNamed<Label>(root, "SaveSyncHeadline").Text.Contains("sync is off"),
             "Disabled sync still displayed a cloud synchronization status.");
+        Expect(!syncToggle.ButtonPressed, "A disabled sync presentation left the sync toggle on.");
         Expect(FindVisibleButton(root, "Sync now").Disabled,
             "Disabled sync left manual transfers enabled.");
         Expect(!FindUniqueVisibleNamed<Button>(root, "CopyVanillaToModdedButton").Disabled,
             "Disabling cloud sync disabled local profile copying.");
         syncToggle.ButtonPressed = true;
-        Expect(events.SaveSyncPreferenceChanges - preferenceChangesBefore == 2, "Sync preference changes did not reach the view.");
-        view.SetSaveSyncPresentation(UpToDateSavePresentation());
+        Expect(events.SaveSyncPreferenceChanges - preferenceChangesBefore == 2 && events.LastSaveSyncPreference == true,
+            "Sync preference changes did not reach the controller.");
+        view.SetSaveSyncPresentation(UpToDateSavePresentation(), busy: false);
     }
 
     private static void AssertSaveState(
@@ -1012,7 +1016,7 @@ internal static class LauncherUiInteractionTest
         bool detailsVisible
     )
     {
-        view.SetSaveSyncPresentation(presentation);
+        view.SetSaveSyncPresentation(presentation, busy: false);
         AssertVisibleLabelText(
             root,
             "SaveNamespaceExplanation",
@@ -1813,7 +1817,11 @@ internal static class LauncherUiInteractionTest
             SaveSyncNowPressed = () => events.SaveSyncNow++,
             SavePullPressed = () => events.SaveGet++,
             SavePushPressed = () => events.SaveSend++,
-            SaveSyncPreferenceChanged = () => events.SaveSyncPreferenceChanges++,
+            SaveSyncPreferenceChanged = enabled =>
+            {
+                events.SaveSyncPreferenceChanges++;
+                events.LastSaveSyncPreference = enabled;
+            },
             CopyVanillaToModdedPressed = () => events.ProfileCopy++,
             WorkshopSyncPressed = () => { },
             WorkshopClearPressed = () =>
@@ -1847,5 +1855,6 @@ internal static class LauncherUiInteractionTest
         internal int WorkshopRemove;
         internal int ModsSelectionChanged;
         internal int SaveSyncPreferenceChanges;
+        internal bool? LastSaveSyncPreference;
     }
 }

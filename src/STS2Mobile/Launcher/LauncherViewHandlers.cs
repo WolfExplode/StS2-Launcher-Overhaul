@@ -26,7 +26,7 @@ internal sealed class LauncherViewHandlers
     internal Action SaveSyncNowPressed { get; init; }
     internal Action SavePullPressed { get; init; }
     internal Action SavePushPressed { get; init; }
-    internal Action SaveSyncPreferenceChanged { get; init; }
+    internal Action<bool> SaveSyncPreferenceChanged { get; init; }
     internal Action CopyVanillaToModdedPressed { get; init; }
     internal Action WorkshopSyncPressed { get; init; }
     internal Action WorkshopClearPressed { get; init; }

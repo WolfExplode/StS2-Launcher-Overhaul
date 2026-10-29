@@ -202,8 +202,8 @@ internal sealed partial class LauncherView
 
     internal void SetWorkshopButtonsDisabled(bool disabled) => Actions.SetWorkshopButtonsDisabled(disabled);
     internal void SetLaunchControlsDisabled(bool disabled) => Actions.SetLaunchControlsDisabled(disabled);
-    internal void SetSaveSyncControlsDisabled(bool disabled) => Actions.SetSaveSyncControlsDisabled(disabled);
-    internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation) => Actions.SetSaveSyncPresentation(presentation);
+    internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation, bool busy)
+        => Actions.SetSaveSyncPresentation(presentation, busy);
     internal void SetModsPresentationChecking()
     {
         Actions.SetModsPresentationChecking();

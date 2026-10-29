@@ -7,15 +7,22 @@ namespace STS2Mobile.Launcher;
 
 internal sealed partial class LauncherController
 {
-    private int _saveSyncRunning;
+    private enum SaveOperation
+    {
+        None,
+        Sync,
+        ProfileCopy,
+    }
+
+    // Set and cleared on the main thread. An operation ends only once its
+    // result has been applied, so the next one never starts before that.
+    private SaveOperation _saveOperation;
+    private bool _saveSyncConflict;
     private int _saveSyncUiAvailable = 1;
     private int _launchAfterSaveSyncPending;
     private int _automaticSaveSyncStarted;
     private CancellationTokenSource _saveSyncCancellation;
     private Task _saveSyncTask = Task.CompletedTask;
-    private LauncherSaveSyncPresentation _saveSyncPresentation;
-    private LauncherSaveSyncPresentation _saveSyncPresentationBeforeOperation;
-    private bool _saveSyncPresentationInitialized;
 
     private void LaunchPressed()
         => LaunchAfterSaveSync(() => LaunchOrRepair(_launch.LaunchPressed));
@@ -70,16 +77,24 @@ internal sealed partial class LauncherController
         );
     }
 
+    // The Saves page is drawn from the sync preference, the running operation,
+    // an unresolved conflict and the service's persisted status. Nothing else
+    // is remembered, so every caller gets the same page for the same state.
     private void RefreshSaveSyncPresentation()
-    {
-        if (Volatile.Read(ref _saveSyncRunning) != 0)
-            return;
-
-        ApplySaveSyncPresentation(
-            LauncherSaveSyncPresentation.FromStatus(
-                SaveSyncService.GetStatusSnapshot()
-            )
+        => _view.SetSaveSyncPresentation(
+            CurrentSaveSyncPresentation(),
+            busy: _saveOperation != SaveOperation.None
         );
+
+    private LauncherSaveSyncPresentation CurrentSaveSyncPresentation()
+    {
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
+            return LauncherSaveSyncPresentation.Disabled();
+        if (_saveOperation == SaveOperation.Sync)
+            return LauncherSaveSyncPresentation.Syncing();
+        if (_saveSyncConflict)
+            return LauncherSaveSyncPresentation.Conflict();
+        return LauncherSaveSyncPresentation.FromStatus(SaveSyncService.GetStatusSnapshot());
     }
 
     private void StartSaveSync(
@@ -87,40 +102,19 @@ internal sealed partial class LauncherController
         bool overwriteConfirmed
     )
     {
-        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
-        {
-            ApplySaveSyncPresentation(LauncherSaveSyncPresentation.Disabled());
+        if (_saveOperation != SaveOperation.None)
             return;
-        }
-        if (Interlocked.CompareExchange(ref _saveSyncRunning, 1, 0) != 0)
-            return;
-
-        if (!SaveSyncService.TryGetActive(out var service))
+        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir)
+            || !SaveSyncService.TryGetActive(out var service))
         {
-            Interlocked.Exchange(ref _saveSyncRunning, 0);
-            ApplySaveSyncPresentation(
-                LauncherSaveSyncPresentation.FromStatus(
-                    SaveSyncService.GetStatusSnapshot()
-                )
-            );
+            RefreshSaveSyncPresentation();
             return;
         }
 
-        if (!_saveSyncPresentationInitialized)
-        {
-            ApplySaveSyncPresentation(
-                LauncherSaveSyncPresentation.FromStatus(
-                    SaveSyncService.GetStatusSnapshot()
-                )
-            );
-        }
-        _saveSyncPresentationBeforeOperation = _saveSyncPresentation;
-        _view.SetSaveSyncControlsDisabled(true);
-        ApplySaveSyncPresentation(
-            LauncherSaveSyncPresentation.Syncing()
-        );
         var cancellation = new CancellationTokenSource();
         _saveSyncCancellation = cancellation;
+        _saveOperation = SaveOperation.Sync;
+        RefreshSaveSyncPresentation();
         _saveSyncTask = RunSaveSyncAsync(
             service,
             request,
@@ -151,12 +145,11 @@ internal sealed partial class LauncherController
             PatchHelper.Log(
                 $"[Cloud] Manual synchronization task failed: {ex.GetType().Name}"
             );
-            ReleaseSaveSyncOperation();
-            QueueSaveSyncUiCompletion(FinishSaveSyncFailure);
-            return;
+            SaveSyncService.ReportFailure(SaveSyncService.SyncFailureKind.Other);
+            result = default;
         }
 
-        ReleaseSaveSyncOperation();
+        DisposeSaveSyncCancellation();
         QueueSaveSyncUiCompletion(() => FinishSaveSync(request, result));
     }
 
@@ -165,21 +158,19 @@ internal sealed partial class LauncherController
         SaveSyncService.SyncResult result
     )
     {
-        _view.SetSaveSyncControlsDisabled(false);
+        _saveOperation = SaveOperation.None;
+        // A canceled sync or an unanswered overwrite question leaves the
+        // previous conflict standing; any other outcome replaces it. Failures
+        // need no handling here: the service records them in its status.
+        if (!result.Canceled && result.Prompt != SaveSyncService.SyncPrompt.ConfirmOverwrite)
+            _saveSyncConflict = result.Prompt == SaveSyncService.SyncPrompt.ChooseSource;
+        RefreshSaveSyncPresentation();
 
         if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
-        {
-            RefreshSaveSyncPresentation();
             return;
-        }
 
         if (result.Prompt == SaveSyncService.SyncPrompt.ChooseSource)
         {
-            ApplySaveSyncPresentation(
-                LauncherSaveSyncPresentation.Conflict(
-                    SaveSyncService.GetStatusSnapshot()
-                )
-            );
             _view.ShowSaveSyncConflict(
                 () => StartSaveSync(
                     SaveSyncService.SyncRequest.Pull,
@@ -190,68 +181,15 @@ internal sealed partial class LauncherController
                     overwriteConfirmed: true
                 )
             );
-            return;
         }
-
-        if (result.Prompt == SaveSyncService.SyncPrompt.ConfirmOverwrite)
+        else if (result.Prompt == SaveSyncService.SyncPrompt.ConfirmOverwrite)
         {
-            RestoreSaveSyncPresentationBeforeOperation();
+            Action confirm = () => StartSaveSync(request, overwriteConfirmed: true);
             if (request == SaveSyncService.SyncRequest.Pull)
-            {
-                _view.ShowGetSavesOverwriteConfirmation(
-                    () => StartSaveSync(request, overwriteConfirmed: true),
-                    RestoreSaveSyncPresentationBeforeOperation
-                );
-            }
+                _view.ShowGetSavesOverwriteConfirmation(confirm, RefreshSaveSyncPresentation);
             else
-            {
-                _view.ShowSendSavesOverwriteConfirmation(
-                    () => StartSaveSync(request, overwriteConfirmed: true),
-                    RestoreSaveSyncPresentationBeforeOperation
-                );
-            }
-            return;
+                _view.ShowSendSavesOverwriteConfirmation(confirm, RefreshSaveSyncPresentation);
         }
-
-        if (result.Canceled)
-        {
-            RestoreSaveSyncPresentationBeforeOperation();
-            return;
-        }
-
-        if (!result.Success)
-        {
-            ApplySaveSyncPresentation(
-                result.FailureKind == SaveSyncService.SyncFailureKind.Offline
-                    ? LauncherSaveSyncPresentation.Offline(
-                        SaveSyncService.GetStatusSnapshot()
-                    )
-                    : result.FailureKind
-                        == SaveSyncService.SyncFailureKind.Authentication
-                        ? LauncherSaveSyncPresentation.SignInRequired()
-                        : LauncherSaveSyncPresentation.SyncFailed(
-                        SaveSyncService.GetStatusSnapshot()
-                    )
-            );
-            return;
-        }
-
-        ApplySaveSyncPresentation(
-            LauncherSaveSyncPresentation.FromStatus(
-                SaveSyncService.GetStatusSnapshot()
-            )
-        );
-    }
-
-    private void FinishSaveSyncFailure()
-    {
-        SaveSyncService.ReportFailure(SaveSyncService.SyncFailureKind.Other);
-        _view.SetSaveSyncControlsDisabled(false);
-        ApplySaveSyncPresentation(
-            LauncherSaveSyncPresentation.SyncFailed(
-                SaveSyncService.GetStatusSnapshot()
-            )
-        );
     }
 
     private void QueueSaveSyncUiCompletion(Action completion)
@@ -266,23 +204,24 @@ internal sealed partial class LauncherController
         });
     }
 
-    private void ApplySaveSyncPresentation(LauncherSaveSyncPresentation presentation)
+    private void SaveSyncPreferenceChanged(bool enabled)
     {
-        if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
-            presentation = LauncherSaveSyncPresentation.Disabled();
-        _saveSyncPresentation = presentation;
-        _saveSyncPresentationInitialized = true;
-        _view.SetSaveSyncPresentation(presentation);
-    }
+        try
+        {
+            SteamSaveSyncSettings.SetEnabled(AppPaths.AppPrivateDataDir, enabled);
+        }
+        catch (Exception ex)
+        {
+            PatchHelper.Log($"[Cloud] Could not save sync preference: {ex.Message}");
+        }
 
-    private void SaveSyncPreferenceChanged()
-    {
         if (!SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir))
         {
             CancelActiveSaveSync();
             if (SaveSyncService.TryGetActive(out var service))
                 service.PauseAutomaticPush();
-            ApplySaveSyncPresentation(LauncherSaveSyncPresentation.Disabled());
+            _saveSyncConflict = false;
+            RefreshSaveSyncPresentation();
         }
         else
         {
@@ -291,9 +230,6 @@ internal sealed partial class LauncherController
             StartAutomaticSaveSync();
         }
     }
-
-    private void RestoreSaveSyncPresentationBeforeOperation()
-        => ApplySaveSyncPresentation(_saveSyncPresentationBeforeOperation);
 
     private void LaunchAfterSaveSync(Action launch)
     {
@@ -348,9 +284,6 @@ internal sealed partial class LauncherController
         return Volatile.Read(ref _saveSyncTask);
     }
 
-    private void ReleaseSaveSyncOperation()
-    {
-        Interlocked.Exchange(ref _saveSyncRunning, 0);
-        Interlocked.Exchange(ref _saveSyncCancellation, null)?.Dispose();
-    }
+    private void DisposeSaveSyncCancellation()
+        => Interlocked.Exchange(ref _saveSyncCancellation, null)?.Dispose();
 }

@@ -100,10 +100,9 @@ internal sealed partial class ActionSection
         };
         guidance.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextSecondary);
         group.AddChild(guidance);
-        var actions = new GridContainer
+        var actions = new VBoxContainer
         {
             Name = "SelectedVersionRepairActions",
-            Columns = 1,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         actions.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, _scale));
