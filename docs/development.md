@@ -163,6 +163,8 @@ After supplying the [prerequisites](#prerequisites), use the build wrapper so th
   -KeystorePath "<existing-keystore>" -KeystoreAlias "<alias>" -KeystorePassword "<password>"
 ```
 
+The ARM64 APK also ships two stub libraries, `libsteam_api.so` and `libsentry.so`, that the wrapper does not build. They satisfy the game's Steamworks.NET and Sentry native loads; Steam initialization and Sentry are patched out. Build them by running `./build_stubs.sh` from `src/stubs` (it uses `ANDROID_NDK_ROOT`), then copy `src/stubs/out/arm64-v8a/*.so` into `android/libs/release/arm64-v8a/` before the first APK build.
+
 The wrapper archives the APK and checksum under `artifacts/android/`. For a later build, choose a unique version name and a version code higher than the installed APK. A successful build or structural APK inspection does not establish phone compatibility, gameplay success, or working Steam save transfer.
 
 Never uninstall, downgrade, clear application data, or change package/signing identity when existing application-private saves must be preserved.

@@ -9,8 +9,6 @@ android/assets/dotnet_bcl/
 android/local.properties
 android/res/values-*/godot_project_name_string.xml
 android/res/values/godot_project_name_string.xml
-src/patcher/bin/
-src/patcher/obj/
 src/STS2Mobile/bin/
 src/STS2Mobile/obj/
 tools/**/bin/
