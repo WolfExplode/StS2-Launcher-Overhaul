@@ -716,6 +716,20 @@ internal static class LauncherUiInteractionTest
         view.SetUpdateCheckBusy(false);
         Expect(!FindVisibleButton(root, "Check for updates").Disabled,
             "A finished update check did not restore the update action.");
+        view.SetSelectedVersionOperationRunning(true);
+        Expect(selector.Disabled
+                && FindVisibleButton(root, "Check for updates").Disabled
+                && FindVisibleButton(root, "Refresh list").Disabled,
+            "A running download left the version controls usable.");
+        view.SetSelectedVersionOperationRunning(false);
+        view.SetRefreshGameVersionsBusy(true);
+        view.SetUpdateCheckBusy(true);
+        view.SetUpdateCheckBusy(false);
+        Expect(selector.Disabled && FindVisibleButton(root, "Check for updates").Disabled,
+            "A finished update check unlocked the version controls while the list was refreshing.");
+        view.SetRefreshGameVersionsBusy(false);
+        Expect(!selector.Disabled && !FindVisibleButton(root, "Refresh list").Disabled,
+            "The version controls stayed locked after every operation finished.");
 
         var betaIndex = Enumerable.Range(0, selector.ItemCount)
             .Single(index => string.Equals(

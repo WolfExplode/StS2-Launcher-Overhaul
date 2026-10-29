@@ -42,12 +42,11 @@ internal sealed partial class DownloadSection : VBoxContainer
     private readonly ProgressBar _progressBar;
     private readonly Label _progressLabel;
     private readonly List<LauncherBranchCatalog.BranchOption> _branchOptions = new();
-    private IReadOnlyList<LauncherBranchCatalog.BranchOption> _availableBranches = Array.Empty<LauncherBranchCatalog.BranchOption>();
     private readonly float _scale;
     private readonly bool _compact;
     private readonly bool _compactStackedActionRows;
     private bool _branchDetailsExpanded;
-    private string _gameBranch = SteamGameBranch.Public;
+    private LauncherVersionsState _versions = LauncherVersionsState.Initial;
     internal DownloadSection(float scale, bool compact = false, bool compactStackedActionRows = false)
     {
         _scale = scale;
@@ -67,7 +66,7 @@ internal sealed partial class DownloadSection : VBoxContainer
         AddRefreshBranchesButtonToLayout();
         _branchHelpLabel = BuildBranchHelpLabel(scale, compact);
         AddChild(_branchHelpLabel);
-        SetGameBranch(_gameBranch);
+        SetVersions(_versions);
         _downloadButton = BuildDownloadButton(scale, compact);
         AddChild(_downloadButton);
         MoveCompactPrimaryInstallControlsBeforeVersionDetails();
@@ -79,7 +78,6 @@ internal sealed partial class DownloadSection : VBoxContainer
     }
 
     internal void SetButtonDisabled(bool disabled) => _downloadButton.Disabled = disabled;
-    internal void SetRefreshVersionsButtonDisabled(bool disabled) => _refreshBranchesButton.Disabled = disabled;
     private Button BuildDownloadButton(float scale, bool compact)
     {
         var button = new StyledButton(CompactDownloadButtonText(DefaultDownloadButtonText, compact), scale, fontSize: compact ? LauncherSectionMetrics.PrimaryButtonFontSize : LauncherSectionMetrics.SecondaryButtonFontSize, height: compact ? CompactDownloadActionHeight : LauncherSectionMetrics.DownloadButtonHeight);
@@ -134,10 +132,6 @@ internal sealed partial class DownloadSection : VBoxContainer
     internal void Reset(string buttonText = DefaultDownloadButtonText)
     {
         _downloadButton.Disabled = false;
-        _branchDropdown.Disabled = false;
-        _refreshBranchesButton.Disabled = false;
-        if (_compactSelectedVersionPanel != null)
-            _compactSelectedVersionPanel.Disabled = false;
         ApplyBranchControlVisibility();
         SetCompactDownloadButtonText(_downloadButton, CompactDownloadButtonText(buttonText, _compact));
         HideProgress();
@@ -151,7 +145,6 @@ internal sealed partial class DownloadSection : VBoxContainer
             _branchDetailsExpanded = false;
             ApplyBranchControlVisibility();
             UpdateBranchHelpText();
-            _compactSelectedVersionPanel.Disabled = true;
         }
 
         _progressBar.Visible = true;
@@ -162,8 +155,5 @@ internal sealed partial class DownloadSection : VBoxContainer
         {
             SetCompactDownloadButtonText(_downloadButton, CompactDownloadProgressButtonText(text));
         }
-
-        _branchDropdown.Disabled = true;
-        _refreshBranchesButton.Disabled = true;
     }
 }

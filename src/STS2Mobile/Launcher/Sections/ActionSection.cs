@@ -77,7 +77,6 @@ internal sealed partial class ActionSection : VBoxContainer
     private VBoxContainer _helpDestination;
     private VBoxContainer _versionMaintenanceGroup;
     private readonly List<LauncherBranchCatalog.BranchOption> _branchOptions = new();
-    private IReadOnlyList<LauncherBranchCatalog.BranchOption> _availableBranches = Array.Empty<LauncherBranchCatalog.BranchOption>();
     private bool _launchControlsDisabled;
     private bool _workshopButtonsDisabled;
     private bool _powerVrCompatibilityRequired;
@@ -85,54 +84,8 @@ internal sealed partial class ActionSection : VBoxContainer
     private string _contextualPlayLabel = "Play Vanilla";
     private string _homeSaveNamespace = "Vanilla saves";
     private string _homeSyncState = "Not synced yet";
-    private string _gameBranch = SteamGameBranch.Public;
-    private bool _selectedVersionInstalled;
-    private LauncherVersionCheckOutcome _versionCheckOutcome;
-    private bool _updateCheckBusy;
+    private LauncherVersionsState _versions = LauncherVersionsState.Initial;
     private string _rendererMode = LauncherRendererMode.Auto;
-    private void UpdateVersionActionAvailability()
-    {
-        _redownloadButton.Visible = _selectedVersionInstalled;
-        if (_versionMaintenanceGroup != null)
-            _versionMaintenanceGroup.Visible = _redownloadButton.Visible;
-    }
-
-    internal void SetVersionCheckOutcome(LauncherVersionCheckOutcome outcome)
-    {
-        _versionCheckOutcome = outcome;
-        ApplyVersionCheckPresentation();
-    }
-
-    internal void SetUpdateCheckBusy(bool busy)
-    {
-        _updateCheckBusy = busy;
-        if (busy)
-            _versionCheckOutcome = LauncherVersionCheckOutcome.None;
-        ApplyVersionCheckPresentation();
-    }
-
-    private bool UpdateAvailable => _versionCheckOutcome == LauncherVersionCheckOutcome.UpdateAvailable;
-
-    // The update button's action follows the last check result for the
-    // selected version, so the label, the help text, and the press agree.
-    private void ApplyVersionCheckPresentation()
-    {
-        var actionText = UpdateAvailable ? "Update selected Steam branch" : "Check for updates";
-        SetCompactActionButtonText(_updateButton, _updateCheckBusy ? "Checking..." : actionText);
-        _updateButton.Disabled = _updateCheckBusy;
-        _branchDropdown.Disabled = _updateCheckBusy;
-        UpdateBranchHelpText();
-    }
-
-    private void InvokeVersionPrimaryAction()
-    {
-        if (UpdateAvailable)
-            UpdateSelectedVersionPressed?.Invoke();
-        else
-            CheckForUpdatesPressed?.Invoke();
-    }
-
-    internal void SetRefreshVersionsButtonDisabled(bool disabled) => _refreshVersionsButton.Disabled = disabled;
     internal void SetWorkshopButtonsDisabled(bool disabled)
     {
         _workshopButtonsDisabled = disabled;
@@ -277,7 +230,7 @@ internal sealed partial class ActionSection : VBoxContainer
         _diagnosticsButton = supportControls.DiagnosticsButton;
         _showLastErrorButton = supportControls.ShowLastErrorButton;
         _copyRawLogButton = supportControls.CopyRawLogButton;
-        SetGameBranch(_gameBranch);
+        SetVersions(_versions);
         BuildDestinationLayout(sectionHeader);
         supportToolsParent.QueueFree();
     }

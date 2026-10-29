@@ -27,8 +27,8 @@ internal sealed partial class ActionSection
 
     private void UpdateHomeStateLine()
     {
-        var normalizedBranch = SteamGameBranch.Normalize(_gameBranch);
-        var branch = string.Equals(normalizedBranch, SteamGameBranch.Public, System.StringComparison.OrdinalIgnoreCase) ? "Public" : string.Equals(normalizedBranch, SteamGameBranch.Beta, System.StringComparison.OrdinalIgnoreCase) ? "Beta" : SteamGameBranch.DisplayName(_gameBranch);
+        var normalizedBranch = _versions.Branch;
+        var branch = string.Equals(normalizedBranch, SteamGameBranch.Public, System.StringComparison.OrdinalIgnoreCase) ? "Public" : string.Equals(normalizedBranch, SteamGameBranch.Beta, System.StringComparison.OrdinalIgnoreCase) ? "Beta" : SteamGameBranch.DisplayName(_versions.Branch);
         _homeStateLine.Text = $"{branch} · {_homeSaveNamespace} · {_homeSyncState}";
     }
 

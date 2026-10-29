@@ -43,16 +43,16 @@ internal sealed partial class DownloadSection
     {
         if (_compactStackedActionRows)
         {
-            return $"Version: {SteamGameBranch.CompactDisplayName(_gameBranch, CompactSelectedVersionStackedBranchLimit)}\n" + $"{CompactInstallFileScope(_gameBranch)} | Change version";
+            return $"Version: {SteamGameBranch.CompactDisplayName(_versions.Branch, CompactSelectedVersionStackedBranchLimit)}\n" + $"{CompactInstallFileScope(_versions.Branch)} | Change version";
         }
 
-        return $"Version: {SteamGameBranch.CompactDisplayName(_gameBranch, CompactSelectedVersionBranchLimit)} | {CompactInstallFileScope(_gameBranch)} | Change";
+        return $"Version: {SteamGameBranch.CompactDisplayName(_versions.Branch, CompactSelectedVersionBranchLimit)} | {CompactInstallFileScope(_versions.Branch)} | Change";
     }
 
     private string CompactInstallVersionHelpText()
     {
         var branchLimit = _compactStackedActionRows ? CompactVersionHelpStackedBranchLimit : CompactVersionHelpBranchLimit;
-        return $"Files for: {SteamGameBranch.CompactDisplayName(_gameBranch, branchLimit)} | {CompactInstallFileScope(_gameBranch)}\n" + LauncherBranchCatalog.SelectedOptionCompactStatus(_gameBranch, _availableBranches) + "\nChecked before replacement; saves and other branches stay in place";
+        return $"Files for: {SteamGameBranch.CompactDisplayName(_versions.Branch, branchLimit)} | {CompactInstallFileScope(_versions.Branch)}\n" + LauncherBranchCatalog.SelectedOptionCompactStatus(_versions.Branch, _versions.Branches) + "\nChecked before replacement; saves and other branches stay in place";
     }
 
     private static string CompactInstallFileScope(string branch) => string.Equals(SteamGameBranch.Normalize(branch), SteamGameBranch.Public, StringComparison.OrdinalIgnoreCase) ? "Default files" : "Separate files";

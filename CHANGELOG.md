@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-29 - Versions page state
+
+- The version selector, update button and version list tools on Home and the Versions page are drawn from one state: the selected version, the version list, the last update check, and whether a check, list refresh or download is running. Before, each section kept its own copy, and four separate calls turned the controls on and off.
+- Version controls are locked while a download, repair, update check or list refresh runs. Before, the Versions page could switch version, check for updates or refresh the list during a download. Ending one operation could also unlock controls another still needed locked: for example, a download reset re-enabled "Refresh list" during a refresh.
+- Choosing a version in a selector no longer changes the page until the switch is confirmed. Declining keeps the previous version shown.
+- The download's running state comes from the launcher model's own guard, so it also covers automatic repair and stays locked until the operation actually ends.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers the locking, but was not run.
+
 ## 2026-10-29 - Saves page state
 
 - The Saves page is drawn in one place from the sync setting, the running operation, an unresolved conflict and the sync service's saved status. Before, the controller kept its own copy of the page and a "before this operation" copy to restore. Both are removed, along with three separate checks of the sync setting in the view.

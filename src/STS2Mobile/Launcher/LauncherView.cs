@@ -48,6 +48,7 @@ internal sealed partial class LauncherView
     private LauncherDestination _destination;
     // Null while the session is connecting and every Home section is hidden.
     private HomeStage? _homeStage;
+    private LauncherVersionsState _versions = LauncherVersionsState.Initial;
     private Control _keyboardFocusScrollTarget;
     private float _keyboardFocusScrollOffset = -1f;
     internal LauncherView(Control parent, LauncherLayoutProfile profile)
@@ -196,9 +197,34 @@ internal sealed partial class LauncherView
     internal void SetActionPreferences(LauncherPreferences.ActionPreferences preferences, IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
     {
         Actions.SetRendererMode(preferences.RendererMode);
-        Download.SetGameBranchOptions(preferences.GameBranch, branches);
-        Actions.SetGameBranchOptions(preferences.GameBranch, branches);
+        SetVersions(_versions.WithSelection(preferences.GameBranch, branches));
     }
+
+    // The single place the version controls are drawn; each setter below
+    // changes one part of the state and redraws both sections from all of it.
+    private void SetVersions(LauncherVersionsState versions)
+    {
+        _versions = versions;
+        Download.SetVersions(versions);
+        Actions.SetVersions(versions);
+    }
+
+    internal void SetGameBranch(string branch) => SetVersions(_versions.WithSelection(branch, _versions.Branches));
+    internal void SetGameBranchOptions(IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
+        => SetVersions(_versions.WithSelection(_versions.Branch, branches));
+    internal void SetVersionCheckOutcome(LauncherVersionCheckOutcome outcome) => SetVersions(_versions with { CheckOutcome = outcome });
+
+    // Starting a check discards the previous result; finishing keeps the new one.
+    internal void SetUpdateCheckBusy(bool busy)
+        => SetVersions(_versions with
+        {
+            CheckingForUpdates = busy,
+            CheckOutcome = busy ? LauncherVersionCheckOutcome.None : _versions.CheckOutcome,
+        });
+
+    internal void SetRefreshGameVersionsBusy(bool busy) => SetVersions(_versions with { RefreshingList = busy });
+    internal void SetSelectedVersionOperationRunning(bool running)
+        => SetVersions(_versions with { SelectedVersionOperationRunning = running });
 
     internal void SetWorkshopButtonsDisabled(bool disabled) => Actions.SetWorkshopButtonsDisabled(disabled);
     internal void SetLaunchControlsDisabled(bool disabled) => Actions.SetLaunchControlsDisabled(disabled);
@@ -218,24 +244,10 @@ internal sealed partial class LauncherView
 
     internal void SetPowerVrCompatibility(bool required) => Actions.SetPowerVrCompatibility(required);
     internal void SetRendererMode(string mode) => Actions.SetRendererMode(mode);
-    internal void SetUpdateCheckBusy(bool busy) => Actions.SetUpdateCheckBusy(busy);
-    internal void SetVersionCheckOutcome(LauncherVersionCheckOutcome outcome) => Actions.SetVersionCheckOutcome(outcome);
     internal void ClearLoginPasswordAndDisable()
     {
         Login.SetDisabled(true);
         Login.ClearPassword();
-    }
-
-    internal void SetGameBranch(string branch)
-    {
-        Download.SetGameBranch(branch);
-        Actions.SetGameBranch(branch);
-    }
-
-    internal void SetGameBranchOptions(IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
-    {
-        Download.SetAvailableBranches(branches);
-        Actions.SetAvailableBranches(branches);
     }
 
     internal void ShowDownloadProgress(string text)
@@ -249,12 +261,6 @@ internal sealed partial class LauncherView
     internal void ResetDownload() => Download.Reset();
     internal void ResetDownload(string buttonText) => Download.Reset(buttonText);
     internal void SetDownloadButtonDisabled(bool disabled) => Download.SetButtonDisabled(disabled);
-    internal void SetRefreshGameVersionsBusy(bool busy)
-    {
-        Download.SetRefreshVersionsButtonDisabled(busy);
-        Actions.SetRefreshVersionsButtonDisabled(busy);
-    }
-
     private void ScrollCompactPrimaryToTop()
     {
         if (_profile.Compact)

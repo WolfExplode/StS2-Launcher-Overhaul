@@ -49,7 +49,6 @@ internal sealed partial class ActionSection
         RefreshModModeButtons(moddedMode, presentation.EnabledCount);
         ApplyModJourneyPresentation(moddedMode, presentation.EnabledCount, presentation.SaveNamespaceLabel);
         RefreshModList(presentation.Mods);
-        UpdateBranchHelpText();
     }
 
     private void ApplyModJourneyPresentation(bool moddedMode, int enabledCount, string saveNamespace)

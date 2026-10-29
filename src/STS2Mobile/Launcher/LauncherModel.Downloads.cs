@@ -15,6 +15,7 @@ internal partial class LauncherModel
     internal event Action<BranchInstallCompletion> DownloadCompleted;
     internal event Action<LauncherBranchOperationFailure> DownloadFailed;
     internal event Action<string> DownloadCancelled;
+    internal event Action<bool> SelectedVersionOperationRunningChanged;
     internal event Action<LauncherUpdateCheckResult> UpdateCheckCompleted;
     internal event Action<LauncherBranchOperationFailure> UpdateCheckFailed;
     internal event Action BranchCatalogRefreshCompleted;
@@ -126,11 +127,20 @@ internal partial class LauncherModel
         private LauncherModel Model { get; }
         internal bool Acquired { get; }
 
-        internal static DownloadRunGuard TryAcquire(LauncherModel model) => new(model, Interlocked.Exchange(ref model._downloadRunning, 1) == 0);
+        internal static DownloadRunGuard TryAcquire(LauncherModel model)
+        {
+            var guard = new DownloadRunGuard(model, Interlocked.Exchange(ref model._downloadRunning, 1) == 0);
+            if (guard.Acquired)
+                Raise(model.SelectedVersionOperationRunningChanged, true, nameof(SelectedVersionOperationRunningChanged));
+            return guard;
+        }
+
         internal void Release()
         {
-            if (Acquired)
-                Interlocked.Exchange(ref Model._downloadRunning, 0);
+            if (!Acquired)
+                return;
+            Interlocked.Exchange(ref Model._downloadRunning, 0);
+            Raise(Model.SelectedVersionOperationRunningChanged, false, nameof(SelectedVersionOperationRunningChanged));
         }
     }
 

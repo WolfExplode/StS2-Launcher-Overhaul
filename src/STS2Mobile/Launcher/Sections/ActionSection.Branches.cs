@@ -6,45 +6,57 @@ using STS2Mobile.Launcher.Components;
 namespace STS2Mobile.Launcher.Sections;
 internal sealed partial class ActionSection
 {
-    internal void SetGameBranch(string branch)
-        => SetGameBranchOptions(branch, _availableBranches);
-
-    internal void SetAvailableBranches(IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
-        => SetGameBranchOptions(_gameBranch, branches);
-
-    // A new selection or a refreshed branch list invalidates the last update
-    // check, which described the previous state.
-    internal void SetGameBranchOptions(string branch, IReadOnlyList<LauncherBranchCatalog.BranchOption> branches)
+    // Draws the version selector, its state line, the update button and the
+    // list and redownload tools from one state.
+    internal void SetVersions(LauncherVersionsState versions)
     {
-        _gameBranch = SteamGameBranch.Normalize(branch);
-        _availableBranches = LauncherBranchDropdown.NormalizeAvailableBranches(branches);
+        _versions = versions;
         UpdateHomeStateLine();
-        PopulateBranchDropdown();
-        SetVersionCheckOutcome(LauncherVersionCheckOutcome.None);
-    }
+        LauncherBranchDropdown.Populate(_branchDropdown, _branchOptions, versions.Branch, versions.Branches);
+        _branchDropdown.Disabled = versions.Busy;
 
-    private void ApplyGameBranch(long index)
-    {
-        if (!LauncherBranchDropdown.TryGetBranch(_branchOptions, index, out var branch))
-            return;
-        SetGameBranch(branch);
-        GameBranchChanged?.Invoke(_gameBranch);
-    }
-
-    private void PopulateBranchDropdown() => LauncherBranchDropdown.Populate(_branchDropdown, _branchOptions, _gameBranch, _availableBranches);
-    private void UpdateBranchHelpText()
-    {
-        _selectedVersionInstalled = LauncherBranchCatalog.SelectedVersionInstalled(_gameBranch, _availableBranches);
-        var state = LauncherBranchCatalog.SelectedVersionState(_gameBranch, _availableBranches);
-        _branchHelpLabel.Text = _versionCheckOutcome switch
+        var state = LauncherBranchCatalog.SelectedVersionState(versions.Branch, versions.Branches);
+        _branchHelpLabel.Text = versions.CheckOutcome switch
         {
             LauncherVersionCheckOutcome.UpToDate => state + " · Up to date",
             LauncherVersionCheckOutcome.UpdateAvailable => state + " · Update available",
             _ => state,
         };
-        _branchHelpLabel.TooltipText = LauncherBranchCatalog.SelectedOptionStatus(_gameBranch, _availableBranches);
+        _branchHelpLabel.TooltipText = LauncherBranchCatalog.SelectedOptionStatus(versions.Branch, versions.Branches);
         _branchHelpLabel.AccessibilityDescription = _branchHelpLabel.TooltipText;
+
+        SetCompactActionButtonText(_updateButton, versions.CheckingForUpdates ? "Checking..."
+            : UpdateAvailable ? "Update selected Steam branch" : "Check for updates");
+        _updateButton.Disabled = versions.Busy;
+        _refreshVersionsButton.Disabled = versions.Busy;
         UpdateVersionActionAvailability();
+    }
+
+    private bool UpdateAvailable => _versions.CheckOutcome == LauncherVersionCheckOutcome.UpdateAvailable;
+
+    // The update button's action follows the last check result for the
+    // selected version, so the label, the state line and the press agree.
+    private void InvokeVersionPrimaryAction()
+    {
+        if (UpdateAvailable)
+            UpdateSelectedVersionPressed?.Invoke();
+        else
+            CheckForUpdatesPressed?.Invoke();
+    }
+
+    // The selection is applied only once the controller confirms the switch
+    // and draws the new state; a declined switch draws the previous one.
+    private void ApplyGameBranch(long index)
+    {
+        if (LauncherBranchDropdown.TryGetBranch(_branchOptions, index, out var branch))
+            GameBranchChanged?.Invoke(branch);
+    }
+
+    private void UpdateVersionActionAvailability()
+    {
+        _redownloadButton.Visible = LauncherBranchCatalog.SelectedVersionInstalled(_versions.Branch, _versions.Branches);
+        if (_versionMaintenanceGroup != null)
+            _versionMaintenanceGroup.Visible = _redownloadButton.Visible;
     }
 
     private (VBoxContainer Group, OptionButton Dropdown, Label StateLabel) BuildBranchControls(float scale, bool compact)
