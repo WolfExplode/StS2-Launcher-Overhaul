@@ -81,7 +81,7 @@ internal static class ModFrameworkContractTest
             },
         };
         LauncherModSelectionState.Save(AppPaths.AppPrivateModSelectionPath, selection);
-        WorkshopModConsent.Accept("isolated native contract fixture");
+        AppPaths.EnsureWorkshopDirectories();
         var resolution = LauncherModLaunchPlan.Resolve(selection,
             LauncherModSelectionState.DiscoverKnownMods(selection, manifest, input.ManualRoot));
         Require(resolution.Success, resolution.Error?.Message ?? "Contract source preparation failed.");

@@ -29,11 +29,6 @@ internal static partial class LauncherBranchCatalog
         }
     }
 
-    internal static IReadOnlyList<string> ReadVisibleBranchNames(string dataDir)
-        => ReadVisibleBranches(dataDir)
-            .Select(option => option.Branch)
-            .ToArray();
-
     internal static IReadOnlyList<BranchOption> ReadSelectableBranches(string dataDir)
         => ReadSelectableBranches(dataDir, ReadVisibleBranches(dataDir));
 

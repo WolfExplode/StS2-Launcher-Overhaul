@@ -36,7 +36,7 @@ internal sealed partial class LauncherLaunchCoordinator
             );
             var restartRequest = restoringPendingAttempt ? LauncherRestartRequest.ConsumeRestored() : null;
             attemptId = restartRequest?.AttemptId ?? LaunchAttemptContext.CreateAttemptId();
-            var branch = SteamGameBranch.Normalize(LauncherPreferences.ReadGameBranch());
+            var branch = SteamGameBranch.Normalize(_selectedBranch());
             if (restartRequest != null && (restartRequest.Branch != branch || restartRequest.Safe != plan.IsSafe))
                 throw new InvalidOperationException("The restored launch request no longer matches the selected version or launch mode. Press Play again.");
             LauncherLaunchMarkers.RecordPhase(
@@ -173,11 +173,11 @@ internal sealed partial class LauncherLaunchCoordinator
             ? _activeLaunchAttempt.Branch
             : SafeSelectedBranch();
 
-    private static string SafeSelectedBranch()
+    private string SafeSelectedBranch()
     {
         try
         {
-            return SteamGameBranch.Normalize(LauncherPreferences.ReadGameBranch());
+            return SteamGameBranch.Normalize(_selectedBranch());
         }
         catch (Exception ex)
         {
@@ -190,7 +190,8 @@ internal sealed partial class LauncherLaunchCoordinator
         _launchInProgress = inProgress;
         if (!inProgress)
             _activeLaunchAttempt = null;
-        _view.SetLaunchControlsDisabled(inProgress);
+        _view.SetLaunchInProgress(inProgress);
+        LaunchInProgressChanged?.Invoke();
     }
 
     internal void RestoreAfterFailedHandoff(string attemptId)

@@ -10,7 +10,7 @@ internal sealed partial class LauncherController
 {
     private void CopyVanillaToModdedPressed()
     {
-        if (Volatile.Read(ref _saveSyncRunning) != 0)
+        if (!CanStartSaveOperation)
             return;
         _view.ShowConfirmation(
             "Copy all vanilla profiles on this device to their matching modded profiles? Existing matching modded profiles will be replaced and backed up. Progress and history are copied; active runs are excluded, and any active modded runs in the replaced profiles are cleared. Vanilla profiles stay unchanged. Copied saves will be included in your next Steam sync.",
@@ -22,7 +22,7 @@ internal sealed partial class LauncherController
 
     private void StartVanillaProfileCopy()
     {
-        if (Interlocked.CompareExchange(ref _saveSyncRunning, 1, 0) != 0)
+        if (!CanStartSaveOperation)
             return;
         try
         {
@@ -31,17 +31,19 @@ internal sealed partial class LauncherController
             // without game methods: even explicit arguments can make Mono load
             // their desktop Steam dependencies when compiling the method.
             var account = VanillaProfileCopy.ResolveAndroidAccountPath(root, OS.HasFeature("editor"));
-            _view.SetSaveSyncControlsDisabled(true);
-            _view.SetStatus("Copying vanilla profiles to modded...", LauncherStatusSeverity.Working);
             var cancellation = new CancellationTokenSource();
             _saveSyncCancellation = cancellation;
+            _saveOperation = SaveOperation.ProfileCopy;
+            RefreshSaveSyncPresentation();
+            _view.SetStatus("Copying vanilla profiles to modded...", LauncherStatusSeverity.Working);
             _saveSyncTask = RunVanillaProfileCopyAsync(root, account, cancellation.Token);
         }
         catch (Exception ex)
         {
             PatchHelper.Log($"[Save] Vanilla profile copy could not start: {ex}");
-            ReleaseSaveSyncOperation();
-            _view.SetSaveSyncControlsDisabled(false);
+            DisposeSaveSyncCancellation();
+            _saveOperation = SaveOperation.None;
+            RefreshSaveSyncPresentation();
             _view.SetStatus(ex.Message, LauncherStatusSeverity.Warning);
         }
     }
@@ -68,10 +70,10 @@ internal sealed partial class LauncherController
             message = $"Could not copy profiles: {ex.Message}";
             severity = LauncherStatusSeverity.Warning;
         }
-        ReleaseSaveSyncOperation();
+        DisposeSaveSyncCancellation();
         QueueSaveSyncUiCompletion(() =>
         {
-            _view.SetSaveSyncControlsDisabled(false);
+            _saveOperation = SaveOperation.None;
             RefreshSaveSyncPresentation();
             _view.SetStatus(message, severity);
         });

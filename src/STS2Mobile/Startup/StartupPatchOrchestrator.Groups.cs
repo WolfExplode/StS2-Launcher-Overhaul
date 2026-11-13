@@ -39,7 +39,6 @@ internal static partial class StartupPatchOrchestrator
                 new("Android asset preload frame budget", AndroidAssetPreloadPatches.Apply),
                 new("Deferred main-menu preload experiment", DeferredPreloadExperimentPatches.Apply),
                 new("Dev console Android fallback", DevConsolePatches.Apply),
-                new("Event layout", EventLayoutPatches.Apply),
                 new("Merchant layout", MerchantLayoutPatches.Apply),
                 new("App lifecycle", AppLifecyclePatches.Apply),
                 new("Touch input", TouchInputPatches.Apply),

@@ -5,7 +5,7 @@ namespace STS2Mobile.Launcher.Sections;
 
 internal static partial class LauncherSectionSetup
 {
-    internal static void ConfigureHiddenSection(
+    internal static Control ConfigureHiddenSection(
         VBoxContainer section,
         float scale,
         string title,
@@ -15,16 +15,13 @@ internal static partial class LauncherSectionSetup
         string compactCue = null
     )
     {
-        section.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(
-                compact
-                    ? LauncherSectionMetrics.CompactSectionSeparation
-                    : LauncherSectionMetrics.SectionSeparation,
-                scale
-            )
-        );
+        section.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(
+            compact ? LauncherSectionMetrics.CompactSectionSeparation : LauncherSectionMetrics.SectionSeparation,
+            scale
+        ));
         section.Visible = false;
-        section.AddChild(BuildSectionHeader(title, subtitle, scale, accent, compact, compactCue));
+        var header = BuildSectionHeader(title, subtitle, scale, accent, compact, compactCue);
+        section.AddChild(header);
+        return header;
     }
 }

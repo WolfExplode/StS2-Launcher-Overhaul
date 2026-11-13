@@ -2,7 +2,7 @@ using Godot;
 
 namespace STS2Mobile.Launcher.Components;
 
-internal sealed class StyledLabel : Label
+internal sealed partial class StyledLabel : Label
 {
     internal StyledLabel(
         string text,

@@ -34,7 +34,7 @@ internal sealed partial class LauncherSteamSession
         catch (Exception ex)
         {
             ResetAuth();
-            return SessionFailure("Login failed", ex);
+            return await SessionFailureAsync("Login failed", ex);
         }
     }
 

@@ -3,7 +3,7 @@ using Godot;
 
 namespace STS2Mobile.Launcher.Components;
 
-internal sealed class StyledProgressBar : ProgressBar
+internal sealed partial class StyledProgressBar : ProgressBar
 {
     private const string BackgroundStyle = "background";
     private const string FillStyle = "fill";

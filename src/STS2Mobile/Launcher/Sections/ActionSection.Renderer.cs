@@ -33,7 +33,7 @@ internal sealed partial class ActionSection
             Name = "GraphicsSection",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        group.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(compact ? 6 : 8, scale));
+        group.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(compact ? 6 : 8, scale));
         var label = new StyledLabel("Graphics", scale, compact ? 13 : 14, HorizontalAlignment.Left);
         label.Name = "GraphicsSectionLabel";
         label.AddThemeColorOverride("font_color", LauncherComponentTheme.TextSecondary);
@@ -42,7 +42,7 @@ internal sealed partial class ActionSection
         {
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        row.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(6, scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         group.AddChild(row);
         var buttonGroup = new ButtonGroup
         {

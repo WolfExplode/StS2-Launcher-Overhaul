@@ -14,11 +14,6 @@ internal static partial class UiScalePatches
         UiScalePercent = LoadUiScalePercent(UiScalePercent);
     }
 
-    private static void SaveUiScale()
-    {
-        SaveUiScalePercent(UiScalePercent);
-    }
-
     private static void ApplyScaledContentSize(Window window)
     {
         float scale = UiScalePercent / 100f;
@@ -52,34 +47,5 @@ internal static partial class UiScalePatches
         }
 
         return fallback;
-    }
-
-    private static void SaveUiScalePercent(int percent)
-    {
-        try
-        {
-            var path = ProjectSettings.GlobalizePath(ConfigPath);
-            File.WriteAllText(path, percent.ToString());
-        }
-        catch (Exception ex)
-        {
-            PatchHelper.Log($"UI scale settings save failed: {ex.GetType().Name}: {ex.Message}");
-        }
-    }
-
-    private static void ApplyUiScale()
-    {
-        EnsureUiScaleLoaded();
-        try
-        {
-            var window = ((SceneTree)Engine.GetMainLoop()).Root;
-            ApplyScaledContentSize(window);
-            PatchHelper.Log($"UI Scale: {UiScalePercent}% -> ContentScaleSize {window.ContentScaleSize}");
-            UiScaleChanged?.Invoke();
-        }
-        catch (Exception ex)
-        {
-            PatchHelper.Log($"Failed to apply UI scale: {ex.Message}");
-        }
     }
 }

@@ -11,10 +11,6 @@ internal sealed class ShaderWarmupPresentationLifecycle
 
     private PresentationState _state;
 
-    internal bool StartupCoverRetained => true;
-    internal bool WarmupVisible => _state == PresentationState.Visible;
-    internal bool InputBlocked => StartupCoverRetained || WarmupVisible;
-
     internal bool MarkVisible()
     {
         if (_state != PresentationState.Pending)

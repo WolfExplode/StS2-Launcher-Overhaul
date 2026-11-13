@@ -39,7 +39,6 @@ internal partial class LauncherModel
 
         try
         {
-            WorkshopModConsent.Clear();
             var stager = new SteamWorkshopStager();
             var removed = stager.ClearStagedMods();
             RaiseWorkshopSyncLogReceived(

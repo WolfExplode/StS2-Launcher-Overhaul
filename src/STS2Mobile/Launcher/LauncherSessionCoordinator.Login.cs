@@ -56,10 +56,7 @@ internal sealed partial class LauncherSessionCoordinator
     }
 
     internal void ShowCodePrompt(bool wasIncorrect)
-    {
-        SetLoginFormVisible(false, disabled: true);
-        _view.ShowCodePrompt(wasIncorrect);
-    }
+        => _view.ShowCodePrompt(wasIncorrect);
 
     private void ShowLogin()
         => ShowLoginForm("Enter your Steam credentials");
@@ -67,9 +64,6 @@ internal sealed partial class LauncherSessionCoordinator
     private void ShowLoginForm(string status)
     {
         _view.SetStatus(status, LauncherStatusSeverity.Warning);
-        SetLoginFormVisible(true, disabled: false);
+        _view.ShowLoginForm(disabled: false);
     }
-
-    private void SetLoginFormVisible(bool visible, bool disabled)
-        => _view.SetLoginFormVisible(visible, disabled);
 }

@@ -43,7 +43,6 @@ internal static class LauncherComponentTheme
     internal const string StateHover = "hover";
     internal const string StateNormal = "normal";
     internal const string StatePressed = "pressed";
-    internal const string ThemeSeparation = "separation";
 
     internal static readonly Color ButtonDisabled = new("#20252F");
     internal static readonly Color ButtonHover = new("#303B4D");
@@ -68,6 +67,7 @@ internal static class LauncherComponentTheme
     internal static readonly Color ProgressFill = new("#86B5AF");
     internal static readonly Color ProgressFillCompact = new("#A6C7C4");
     internal static readonly Color ScreenBackground = new("#090D14");
+    internal static readonly Color ScrollTrack = new(0.23f, 0.32f, 0.35f, 0.25f);
     internal static readonly Color TextMuted = new("#8994A5");
     internal static readonly Color TextPrimary = new("#F3F1EC");
     internal static readonly Color TextSecondary = new("#B0BAC9");

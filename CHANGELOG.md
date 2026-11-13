@@ -1,5 +1,110 @@
 # Changelog
 
+## 2026-10-29 - Remove the Android composition refresh overlay
+
+- Removed the transparent overlay and its seven-frame color changes. Insets and keyboard layout still update when their observed inputs change.
+- The full launcher preview suite passed. On the Galaxy S23, dev.12 displayed the Versions page and confirmation dialog in portrait and landscape without visible stale regions, and Keep Version dismissed the dialog. Rotation with the keyboard open remains unverified.
+
+## 2026-10-29 - Exercise download events through the controller
+
+- Added a fake model that emits running, progress, completion and stopped events through the real controller wiring. The preview checks that version controls stay locked through completion and unlock only after the stopped event; the completion fixture intentionally exercises failed runtime validation. Existing touch emulation also checks tap and drag behavior on a mod toggle.
+- The full launcher preview suite passed, including the ImportVanillaSaves desktop fixture.
+
+## 2026-10-29 - Draw download controls from one state
+
+- The download coordinator now owns the phase, action text and progress presentation. One view method draws the controls, and the selected-version operation event controls whether the download action is disabled. Completion, failure and cancellation clear stale progress. Update and download result bundles now carry status and log messages only.
+- The full launcher preview suite passed, including a coordinator-level running, progress and cancellation sequence. The ImportVanillaSaves desktop fixture still reports resource leaks on exit.
+
+## 2026-10-29 - Keep the selected version in the controller
+
+- The controller reads the selected branch at startup and updates it after a confirmed switch. Version, download, launch, update-check and session coordinators now use that value, including stale-result checks and redownload targeting. Persisted preference formats are unchanged.
+- The full launcher preview suite passed. Diagnostic and lower-level startup services still read the saved selection independently.
+
+## 2026-10-29 - Simplify the compact status headline
+
+- Removed the single-child grid around the status phase and kept its previous non-expanding vertical behavior. The full launcher preview suite passed; the revised status layout has not been visually checked on a device.
+
+## 2026-10-29 - Make confirmation dialogs adapt to the screen
+
+- Confirmation actions use the buttons' own pressed signals. The dialog resizes its scrollable message and uses a responsive action grid when the viewport changes.
+- The full launcher preview suite passed, including ImportVanillaSaves. Physical taps and rotation with a dialog open have not been separately verified.
+
+## 2026-10-29 - Keep version summary readable after rotation
+
+- The compact install section now uses a wrapping, two-line version summary in either orientation instead of selecting a text policy from the startup viewport.
+- The full launcher preview suite passed with the ImportVanillaSaves fixture, and dev.10 was installed in place on the Galaxy S23. The phone screen was unavailable for the requested portrait and landscape visual comparison, so that check remains pending.
+
+## 2026-10-29 - Apply Android display changes only when needed
+
+- The launcher now compares keyboard height, viewport and window size, safe area and focus before updating insets or keyboard layout. Unchanged frames no longer rewrite the panel shift. A resize still recalculates layout, and changing focus while the keyboard is open can reveal the new field.
+- The full launcher preview suite passed, including the original ImportVanillaSaves fixture. On the Galaxy S23, dev.9 retained full-width layout when rotated between portrait and landscape. Rotation with the keyboard open and the composition-refresh workaround still need a device check.
+
+## 2026-10-29 - Run the launcher interaction checks against Godot
+
+- Added the matching Godot source generator to the launcher library, so Godot dispatches its C# lifecycle and layout overrides. Without it, the touch scroll container never subscribed to new controls, leaving buttons and panels blocking drags. Styled controls now have the partial declarations required by the generator; the library continues to use the host's initialization entry point.
+- The scroll fixture now actually overflows phone and tablet viewports. Its synthetic wheel input includes a release so it does not retain mouse focus and block subsequent taps.
+- Added `-UiOnly` to the preview test command for machines without the original ImportVanillaSaves mod fixture. The default full suite still requires that fixture.
+- Built the pinned Android Mono and Harmony runtimes from source. Phone and desktop UI interaction checks passed in Godot, including tablet scale cases, rotation, button locks and tap/drag scrolling. Full mod activation checks remain blocked by the missing fixture. Physical device validation is still pending.
+
+## 2026-10-29 - Failure reporting, Workshop marker, theme overrides and manifest reading
+
+- Recording a Steam sign-in, connection or timeout failure no longer blocks the launcher while the sync status file is written. Before, it waited on the write on the main thread, including on any running sync that held the file. Callers now await the write, so it still completes before the next step.
+- Removed the Workshop consent marker file. It was written on Workshop update and deleted on removal, but nothing read it; the confirmation shown before each Workshop update is the consent. An existing `workshop_mods_accepted.txt` is left in place and is harmless.
+- Container spacing and margins are set through typed helpers (`LauncherThemeOverrides`) that only accept the container types that read them, so spacing set on the wrong kind of container no longer compiles. Converting all 44 spacing settings found no other case of this. Three copies of the `"separation"` constant are removed.
+- The runtime pack manifest is read only under the names the launcher writes. Before, each field was also accepted under up to three other spellings that no launcher in this repository's history wrote. A pack from an older launcher already fails the patch-set check, and only "usable" or "not usable" affects behaviour, so existing installs are treated the same. The never-written minimum launcher version, which diagnostics always reported as missing, is removed.
+- Checked by compiling against stubbed game types; not run.
+
+## 2026-10-29 - Launch locks
+
+- While a launch is in progress, the game version can no longer be switched, checked or refreshed, and "Redownload selected version" is disabled. Before, these stayed usable while the game was starting, and a switch or redownload could repair or delete the files it was loading.
+- Save sync and profile copy can no longer start while a launch is in progress. Before, Play cancelled a running sync and then left "Sync now" pressable while the game started from the local saves.
+- An automatic sync blocked by a running save operation or launch no longer counts as done, so the next sign-in can still start it.
+- The launch coordinator reports when a launch starts and ends; the view and the Saves page both draw from that.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers the version lock during a launch, but was not run.
+
+## 2026-10-29 - Versions page state
+
+- The version selector, update button and version list tools on Home and the Versions page are drawn from one state: the selected version, the version list, the last update check, and whether a check, list refresh or download is running. Before, each section kept its own copy, and four separate calls turned the controls on and off.
+- Version controls are locked while a download, repair, update check or list refresh runs. Before, the Versions page could switch version, check for updates or refresh the list during a download. Ending one operation could also unlock controls another still needed locked: for example, a download reset re-enabled "Refresh list" during a refresh.
+- Choosing a version in a selector no longer changes the page until the switch is confirmed. Declining keeps the previous version shown.
+- The download's running state comes from the launcher model's own guard, so it also covers automatic repair and stays locked until the operation actually ends.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers the locking, but was not run.
+
+## 2026-10-29 - Saves page state
+
+- The Saves page is drawn in one place from the sync setting, the running operation, an unresolved conflict and the sync service's saved status. Before, the controller kept its own copy of the page and a "before this operation" copy to restore. Both are removed, along with three separate checks of the sync setting in the view.
+- A sync conflict now stays on the page until a sync resolves it. Before, signing in or retrying the session redrew the page from the saved status and could show "Up to date" over an unresolved conflict.
+- A failed sync now shows the failure the service recorded (offline, sign-in required or failed), instead of a second mapping in the controller that could disagree with the page shown after the next refresh.
+- The sync toggle only reports the change; the controller saves the setting and redraws the page.
+- The Redownload action on Home is in a vertical box, so its spacing setting takes effect. A one-column grid ignored it.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test was updated but not run.
+
+## 2026-10-29 - Launcher rotation layout
+
+- Rotating the phone no longer leaves the launcher panel shifted sideways and cut off. The keyboard shift wrote the panel's position every frame, which fixed its current width into its layout; if that ran while the panel still had the previous orientation's width, the panel kept that width and centred the content within it. The panel and launcher root now stay anchored to the screen, and the keyboard shift moves only the top and bottom edges.
+- Button rows (save actions, mod actions, version controls, the Steam Guard code row and Help diagnostics) choose side-by-side or stacked from their current width on every resize, instead of once from the orientation the launcher started in.
+- Checked by compiling against stubbed game types. The desktop preview's rotation check now applies the keyboard shift between resizes and checks every page fits after each rotation, but was not run.
+
+## 2026-10-29 - Launcher touch scrolling
+
+- A finger drag now scrolls launcher pages, dialogs and the startup recovery panel from anywhere, including on buttons, toggles, panels and the diagnostics log. Before, panels and buttons stopped the drag from reaching the scroll area, so only gaps between them scrolled. Starting a drag on a button no longer presses it. Text fields keep their own text-selection drag.
+- The scrollbar is styled and scaled for the screen density instead of the few-pixel default.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test now covers tap and drag on a mod toggle, but was not run.
+
+## 2026-10-29 - Repository maintenance
+
+- Documentation now describes the current release only. Dated investigations, plans, audits, duplicate architecture pages and earlier release notes are removed; Git history and the GitHub releases keep them. The pending 20-launch stability procedure moved into the validation runbook.
+- Removed the legacy `scripts/build.sh`, which bypassed the pinned runtime staging, plus a duplicate icon and an unused logo. Documented how the native Steam and Sentry stub libraries reach the APK.
+- Removed the disabled event-layout and UI-scale dropdown patches, the UI-scale change event (which was never raised, so each combat room and main menu stayed subscribed), a diagnostics report that was never written, and other unreferenced members.
+
+## 2026-10-29 - Launcher UI logic cleanup
+
+- Home now moves between explicit stages (setup guide, sign-in, Steam Guard, download, ready, retry), and each stage sets every Home section and play action, replacing six copies of the same visibility steps.
+- The update button now follows the last check result, so showing the play actions again no longer turns "Update selected Steam branch" back into "Check for updates" while the version still reports an update. Finishing a check restores the button label.
+- Opening diagnostics now scrolls to the drawer instead of to the top of the page. Mods, version, and support tools are visible from startup, including when automatic repair runs first.
+- View callbacks are wired by name instead of 24 positional arguments. Removed the never-built compact workflow strip, the always-hidden status detail cue, unused overloads and styles, and redundant hide calls in the download and branch-switch flows.
+- Checked by compiling against stubbed game types. The desktop launcher interaction test was extended but not run, because it needs the game's assemblies.
+
 ## 2026-10-26 - Documentation corrections
 
 - Correct mod loading results, first-time save copying, Safe Start synchronization and offline-launch requirements.
@@ -18,7 +123,7 @@
 - Repaired the existing preload lookup to accept publicized Android members while preserving all field and method shape checks and loading budgets.
 - Repaired the existing Mono bootstrap to leave its native engine host GC-safe after first delegate creation; subsequent callbacks retain their existing transitions.
 - Consolidated the older fix PR's test scaffolding into the existing preload test file and extended the existing probe with an actual Android Mono GC regression.
-- Published at the user's request after local checks and two full Modded/two Vanilla phone passes. Full device acceptance and intermittent freeze resolution remain pending; see [release notes](docs/release-notes/v0.2.435-preload-repair-local-r2.md).
+- Published at the user's request after local checks and two full Modded/two Vanilla phone passes. Full device acceptance and intermittent freeze resolution remain pending; see [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.435-preload-repair-local-r2).
 
 ## 2026-10-02 - v0.2.434-cleanup-local launch repairs and code cleanup
 
@@ -26,7 +131,7 @@
 - Consolidated menu readiness, diagnostic marker reads, file hashing, authentication retries, mod-result validation and Android restart decisions into their existing owners.
 - Removed superseded wrappers and the silent native sound subsystem; consolidated 301 source fragments into 63 responsibility files.
 - Preserved launch contracts, stored formats, saves, credentials, mod selection and the existing package/signing channel.
-- See [release notes](docs/release-notes/v0.2.434-cleanup-local.md) for local validation and pending physical-device acceptance.
+- See [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.434-cleanup-local) for local validation and pending physical-device acceptance.
 
 ## 2026-09-06 - v0.2.431 launcher and startup improvements
 
@@ -34,7 +139,7 @@
 - Added GitHub diagnostic bug reports and verified in-app APK updates.
 - Unified startup task ownership, scene readiness, Android restart requests, and safe timeout handling.
 - Preserved the previous v0.2.430 release FMOD/PCK preparation fixes by merging their source into main.
-- See [release notes](docs/release-notes/v0.2.431.md) for validation and device-test limits.
+- See [release notes](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.431) for validation and device-test limits.
 
 ## 2026-08-22 - Issue #38 runtime identity and ARM64 RC4
 

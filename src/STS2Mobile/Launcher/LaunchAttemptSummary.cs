@@ -150,13 +150,6 @@ internal readonly struct LaunchAttemptSummary
     internal static LaunchAttemptSummary Missing()
         => default;
 
-    internal string ProblemOrDetail()
-        => HasConcrete(ReadinessProblem)
-            ? ReadinessProblem
-            : HasConcrete(Detail)
-                ? Detail
-                : string.Empty;
-
     internal string ShortLine()
     {
         if (!Present)

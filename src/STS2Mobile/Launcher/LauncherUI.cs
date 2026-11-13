@@ -18,7 +18,6 @@ internal sealed partial class LauncherUI : Control
     private LauncherModel _model;
     private LauncherView _view;
     private LauncherController _controller;
-    private Vector2 _lastViewportSize;
     private bool _inGameMode;
     private bool _launcherImeActiveSignalled;
 

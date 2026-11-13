@@ -2,7 +2,7 @@ using Godot;
 
 namespace STS2Mobile.Launcher.Components;
 
-internal sealed class StyledButton : Button
+internal sealed partial class StyledButton : Button
 {
     internal StyledButton(
         string text,

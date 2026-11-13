@@ -14,10 +14,10 @@ internal sealed partial class LauncherView
         var scale = profile.Scale;
         var header = new VBoxContainer();
         header.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        header.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, scale));
+        header.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(6, scale));
         var row = new HBoxContainer();
         row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(10, scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(10, scale));
         row.AddChild(BuildBrandMark(scale, compact: false));
         row.AddChild(BuildDesktopBrandCopy(scale));
         header.AddChild(row);
@@ -35,10 +35,10 @@ internal sealed partial class LauncherView
         var scale = profile.Scale;
         var header = new VBoxContainer();
         header.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        header.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactBrandHeaderSeparation, scale));
+        header.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(CompactBrandHeaderSeparation, scale));
         var row = new HBoxContainer();
         row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(CompactBrandRowSeparation, scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(CompactBrandRowSeparation, scale));
         row.AddChild(BuildBrandMark(scale, compact: true));
         row.AddChild(BuildCompactBrandTitle(scale));
         header.AddChild(row);
@@ -62,7 +62,7 @@ internal sealed partial class LauncherView
     {
         var copy = new VBoxContainer();
         copy.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        copy.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(0, scale));
+        copy.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(0, scale));
         var title = new StyledLabel("StS2 Launcher", scale, fontSize: 26);
         title.HorizontalAlignment = HorizontalAlignment.Left;
         title.AddThemeColorOverride(LauncherViewLayoutMetrics.ThemeFontColor, LauncherComponentTheme.TextPrimary);
@@ -76,7 +76,7 @@ internal sealed partial class LauncherView
         var height = compact ? CompactBrandMarkHeight : 50;
         var mark = new HBoxContainer();
         mark.CustomMinimumSize = new Vector2(LauncherViewLayoutMetrics.ScaleInt(compact ? 12 : 16, scale), LauncherViewLayoutMetrics.ScaleInt(height, scale));
-        mark.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(compact ? 2 : 3, scale));
+        mark.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(compact ? 2 : 3, scale));
         mark.AddChild(BuildBrandMarkStripe(LauncherComponentTheme.OrangeAccent, compact ? 5 : 6, height, scale));
         mark.AddChild(BuildBrandMarkStripe(LauncherComponentTheme.CyanAccent, compact ? 2 : 3, height, scale));
         return mark;

@@ -66,7 +66,7 @@ internal static class CombatBackgroundPatches
         try
         {
             var room = (Control)__instance;
-            AttachScaleRefresh(room, __instance.GetType());
+            DeferAdjust(room, AccessTools.Method(room.GetType(), AdjustCreatureScaleForAspectRatioMethod));
         }
         catch (Exception ex)
         {
@@ -100,32 +100,7 @@ internal static class CombatBackgroundPatches
         );
     }
 
-    private static void AttachScaleRefresh(Control room, Type roomType)
-    {
-        var adjustMethod = AccessTools.Method(
-            roomType,
-            AdjustCreatureScaleForAspectRatioMethod
-        );
-
-        // Deferred so layout dimensions are finalized before adjusting.
-        DeferAdjust(room, adjustMethod);
-
-        // Re-apply when UI scale changes mid-combat.
-        UiScalePatches.UiScaleChanged += OnScaleChanged;
-
-        void OnScaleChanged()
-        {
-            if (!GodotObject.IsInstanceValid(room) || !room.IsInsideTree())
-            {
-                UiScalePatches.UiScaleChanged -= OnScaleChanged;
-                return;
-            }
-
-            ScaleBackground(room);
-            DeferAdjust(room, adjustMethod);
-        }
-    }
-
+    // Deferred so layout dimensions are finalized before adjusting.
     private static void DeferAdjust(Control room, MethodInfo adjustMethod)
     {
         if (adjustMethod == null)

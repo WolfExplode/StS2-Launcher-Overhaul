@@ -10,7 +10,7 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
         var compactCopy = UseCompactRecoveryCopy(viewportSize);
         Layer = CreateLayer();
 
-        var scroll = CreateScrollContainer();
+        var scroll = CreateScrollContainer(scale);
         Layer.AddChild(scroll);
 
         var frame = CreateFrame(viewportSize);

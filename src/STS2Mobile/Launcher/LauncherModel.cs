@@ -82,11 +82,11 @@ internal partial class LauncherModel : IDisposable
         return StartSession();
     }
 
-    internal void ResetGameFilesForRedownload()
+    internal void ResetGameFilesForRedownload(string branch)
     {
         CancelDownloadForRetry();
         ResetDownload();
-        LauncherGameFiles.DeleteDownloadedState(_dataDir);
+        LauncherGameFiles.DeleteDownloadedState(_dataDir, branch);
     }
 
     void IDisposable.Dispose()

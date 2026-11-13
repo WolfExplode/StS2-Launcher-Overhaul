@@ -29,9 +29,6 @@ internal static class LauncherGameSceneReadiness
         }
     }
 
-    internal static bool IsCurrentSceneReady(object game, string attemptId)
-        => GetCurrentReadyScene(game, attemptId) != null;
-
     internal static object GetCurrentReadyScene(object game, string attemptId)
     {
         try

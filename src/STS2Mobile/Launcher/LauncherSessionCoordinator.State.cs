@@ -60,7 +60,7 @@ internal sealed partial class LauncherSessionCoordinator
     {
         _model.MarkConnectionResolved();
         _view.SetStatus(_model.FailureStatus(), LauncherStatusSeverity.Error);
-        SetLoginFormVisible(true, disabled: false);
+        _view.ShowLoginForm(disabled: false);
     }
 
 }

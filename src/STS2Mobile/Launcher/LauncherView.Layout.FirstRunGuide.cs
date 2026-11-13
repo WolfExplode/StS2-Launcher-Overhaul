@@ -22,7 +22,7 @@ internal sealed partial class LauncherView
         panel.AddThemeStyleboxOverride(LauncherComponentTheme.Panel, BuildFirstRunGuideStyle(scale, compact));
         var body = new VBoxContainer();
         body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(5, scale));
+        body.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(5, scale));
         panel.AddChild(body);
         var title = new StyledLabel("Quick start guide", scale, fontSize: compact ? CompactSafeFlowGuideTitleFontSize : 12, align: HorizontalAlignment.Left);
         if (compact)
@@ -76,7 +76,7 @@ internal sealed partial class LauncherView
             SizeFlagsVertical = Control.SizeFlags.ExpandFill,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(7, scale));
+        row.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(7, scale));
         row.AddChild(BuildCompactSafeFlowStepAccent(scale, step.Accent));
         row.AddChild(BuildCompactSafeFlowStepMarker(scale, step));
         row.AddChild(BuildCompactSafeFlowStepText(scale, step));
@@ -92,7 +92,7 @@ internal sealed partial class LauncherView
             SizeFlagsVertical = Control.SizeFlags.ShrinkCenter,
             MouseFilter = Control.MouseFilterEnum.Ignore,
         };
-        textColumn.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, 0);
+        textColumn.SetSeparation(0);
         textColumn.AddChild(BuildCompactSafeFlowStepTitle(scale, step.Title));
         textColumn.AddChild(BuildCompactSafeFlowStepDetail(scale, step.Detail));
         return textColumn;
@@ -186,7 +186,7 @@ internal sealed partial class LauncherView
     {
         var wrapper = new VBoxContainer();
         wrapper.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        wrapper.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(5, scale));
+        wrapper.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(5, scale));
         var toggle = new StyledButton("", scale, fontSize: LauncherSectionMetrics.CompactDetailButtonFontSize, height: LauncherSectionMetrics.CompactDrawerToggleHeight);
         LauncherButtonStyles.ApplySupportAction(toggle, scale);
         SetCompactSafeFlowToggleText(toggle, scale, "Quick Start", "Sign in and play");

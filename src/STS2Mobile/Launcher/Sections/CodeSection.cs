@@ -7,7 +7,6 @@ namespace STS2Mobile.Launcher.Sections;
 internal sealed partial class CodeSection : VBoxContainer
 {
     private readonly bool _compact;
-    private bool _compactStackedActionRows;
     private bool _normalizingCodeText;
 
     internal event Action<string> CodeSubmitted;
@@ -15,12 +14,11 @@ internal sealed partial class CodeSection : VBoxContainer
     private readonly LineEdit _codeField;
     private readonly Label _codeLabel;
     private readonly Label _codeHelpLabel;
-    private readonly GridContainer _compactCodeActionRow;
+    private readonly Container _compactCodeActionRow;
 
-    internal CodeSection(float scale, bool compact = false, bool compactStackedActionRows = false)
+    internal CodeSection(float scale, bool compact = false)
     {
         _compact = compact;
-        _compactStackedActionRows = compact && compactStackedActionRows;
         LauncherSectionSetup.ConfigureHiddenSection(
             this,
             scale,
@@ -41,7 +39,7 @@ internal sealed partial class CodeSection : VBoxContainer
         Container compactCodeActionRow = null;
         if (compact)
         {
-            _compactCodeActionRow = BuildCompactCodeActionRow(scale, _compactStackedActionRows);
+            _compactCodeActionRow = BuildCompactCodeActionRow(scale);
             compactCodeActionRow = _compactCodeActionRow;
             AddChild(compactCodeActionRow);
             codeActionParent = compactCodeActionRow;

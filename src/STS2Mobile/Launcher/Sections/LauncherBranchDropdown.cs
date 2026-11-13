@@ -7,33 +7,6 @@ namespace STS2Mobile.Launcher.Sections;
 
 internal static class LauncherBranchDropdown
 {
-    internal readonly struct SelectionUpdate
-    {
-        internal SelectionUpdate(string branch, bool changed)
-        {
-            Branch = branch;
-            Changed = changed;
-        }
-
-        internal string Branch { get; }
-        internal bool Changed { get; }
-    }
-
-    internal static SelectionUpdate NormalizeSelection(string currentBranch, string requestedBranch)
-    {
-        var normalizedCurrentBranch = SteamGameBranch.Normalize(currentBranch);
-        var normalizedRequestedBranch = SteamGameBranch.Normalize(requestedBranch);
-        return new SelectionUpdate(
-            normalizedRequestedBranch,
-            !string.Equals(normalizedCurrentBranch, normalizedRequestedBranch, StringComparison.OrdinalIgnoreCase)
-        );
-    }
-
-    internal static IReadOnlyList<LauncherBranchCatalog.BranchOption> NormalizeAvailableBranches(
-        IReadOnlyList<LauncherBranchCatalog.BranchOption> branches
-    )
-        => branches ?? Array.Empty<LauncherBranchCatalog.BranchOption>();
-
     internal static void Populate(
         OptionButton dropdown,
         List<LauncherBranchCatalog.BranchOption> branchOptions,

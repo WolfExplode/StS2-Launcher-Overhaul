@@ -28,7 +28,7 @@ internal sealed partial class LauncherLaunchCoordinator
             readiness = await LauncherPreparationLifetime.RunAsync(preparation, stage.WaitAsync,
                 () => ShowPreparationDraining(interactionLock), ObservePreparationFailure);
             if (!IsCurrentAttempt(attempt)) return null;
-            if (SteamGameBranch.Normalize(LauncherPreferences.ReadGameBranch()) != attempt.Branch)
+            if (SteamGameBranch.Normalize(_selectedBranch()) != attempt.Branch)
                 throw new InvalidOperationException("The selected game version changed while preparing launch. Press Play again.");
         }
         catch (Exception ex)

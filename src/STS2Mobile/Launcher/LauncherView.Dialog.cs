@@ -18,10 +18,21 @@ internal sealed partial class LauncherView
         var dialogBox = BuildDialogBox(scale);
         var vbox = BuildDialogContentBox(scale);
         dialogBox.AddChild(vbox);
-        vbox.AddChild(BuildDialogMessageArea(message, profile));
+        var messageArea = BuildDialogMessageArea(message, profile);
+        vbox.AddChild(messageArea);
         vbox.AddChild(BuildDialogButtons(dialog, profile, onConfirmed, onCancelled, confirmText, cancelText));
         center.AddChild(dialogBox);
         dialog.AddChild(center);
+        void UpdateDialogSize()
+        {
+            var viewport = dialog.Size;
+            if (viewport.X <= 0 || viewport.Y <= 0)
+                return;
+            var current = LauncherLayoutProfile.ForViewport(viewport, profile.TouchOptimized);
+            var width = Math.Min(DialogMessageWidth(current), Math.Max(1, (int)(viewport.X * CompactDialogWidthRatio) - LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogPanelMargin * 2)));
+            messageArea.CustomMinimumSize = new Vector2(width, Math.Min(DialogMessageScrollHeight(message, current), Math.Max(1, (int)(viewport.Y * CompactDialogMaxMessageHeightRatio))));
+        }
+        dialog.Resized += UpdateDialogSize;
         return dialog;
     }
 
@@ -49,16 +60,8 @@ internal sealed partial class LauncherView
     {
         var vbox = new VBoxContainer();
         vbox.MouseFilter = Control.MouseFilterEnum.Pass;
-        vbox.AddThemeConstantOverride(LauncherComponentTheme.ThemeSeparation, LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogContentSeparation));
+        vbox.SetSeparation(LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogContentSeparation));
         return vbox;
-    }
-
-    private static void ApplyDialogButtonLayout(Button button, LauncherLayoutProfile profile)
-    {
-        if (!profile.Compact)
-            return;
-        button.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        button.CustomMinimumSize = new Vector2(DialogMessageWidth(profile), LauncherComponentTheme.ScaleInt(profile.Scale, LauncherComponentTheme.DialogButtonHeight));
     }
 
     private static Button BuildDialogButton(string text, float scale, Action callback, Action<Button, float> applyStyle)
@@ -71,39 +74,23 @@ internal sealed partial class LauncherView
         return button;
     }
 
-    private static BoxContainer BuildDialogButtons(ColorRect dialog, LauncherLayoutProfile profile, Action onConfirmed, Action onCancelled, string confirmText, string cancelText)
+    private static Container BuildDialogButtons(ColorRect dialog, LauncherLayoutProfile profile, Action onConfirmed, Action onCancelled, string confirmText, string cancelText)
     {
         var scale = profile.Scale;
-        BoxContainer buttonRow = profile.Compact ? new VBoxContainer() : new HBoxContainer();
+        var buttonRow = new ResponsiveGrid(LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogButtonSeparation), 2);
         buttonRow.Name = "ConfirmationActions";
         buttonRow.MouseFilter = Control.MouseFilterEnum.Pass;
-        buttonRow.AddThemeConstantOverride(LauncherComponentTheme.ThemeSeparation, LauncherComponentTheme.ScaleInt(scale, LauncherComponentTheme.DialogButtonSeparation));
-        buttonRow.Alignment = profile.Compact ? BoxContainer.AlignmentMode.Begin : BoxContainer.AlignmentMode.Center;
-        var dismissed = false;
+
         void Dismiss(Action callback)
         {
-            if (dismissed)
-                return;
-            dismissed = true;
             dialog.QueueFree();
             callback?.Invoke();
         }
 
         var cancel = BuildDialogButton(DialogButtonText(cancelText, "Cancel"), scale, () => Dismiss(onCancelled), LauncherButtonStyles.ApplySupportAction);
         var ok = BuildDialogButton(DialogButtonText(confirmText, "OK"), scale, () => Dismiss(onConfirmed), LauncherButtonStyles.ApplyPrimaryAction);
-        ApplyDialogButtonLayout(cancel, profile);
-        ApplyDialogButtonLayout(ok, profile);
         buttonRow.AddChild(cancel);
         buttonRow.AddChild(ok);
-        dialog.GuiInput += ev =>
-        {
-            if (!TryGetPressedPointerPosition(ev, out var position))
-                return;
-            if (ok.GetGlobalRect().HasPoint(position))
-                Dismiss(onConfirmed);
-            else if (cancel.GetGlobalRect().HasPoint(position))
-                Dismiss(onCancelled);
-        };
         return buttonRow;
     }
 
@@ -117,13 +104,10 @@ internal sealed partial class LauncherView
     private static Control BuildDialogMessageArea(string message, LauncherLayoutProfile profile)
     {
         var label = BuildDialogMessage(message, profile);
-        if (!profile.Compact || !ShouldScrollDialogMessage(message))
-            return label;
-        var scroll = new ScrollContainer
+        var scroll = new TouchScrollContainer(profile.Scale)
         {
-            MouseFilter = Control.MouseFilterEnum.Pass,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
-            CustomMinimumSize = new Vector2(DialogMessageWidth(profile), DialogMessageScrollHeight(message, profile)),
+            CustomMinimumSize = new Vector2(1, 1),
         };
         label.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         scroll.AddChild(label);
@@ -136,12 +120,11 @@ internal sealed partial class LauncherView
         var label = new StyledLabel(message, scale, fontSize: LauncherComponentTheme.DialogMessageFontSize);
         label.MouseFilter = Control.MouseFilterEnum.Ignore;
         label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        label.CustomMinimumSize = new Vector2(DialogMessageWidth(profile), 0);
+        label.CustomMinimumSize = Vector2.Zero;
         label.HorizontalAlignment = HorizontalAlignment.Center;
         return label;
     }
 
-    private static bool ShouldScrollDialogMessage(string message) => !string.IsNullOrWhiteSpace(message) && (message.Length > CompactDialogLongMessageWidthCharacters * 3 || message.Contains('\n', StringComparison.Ordinal));
     private static int DialogMessageWidth(LauncherLayoutProfile profile)
     {
         var scaledDefault = LauncherComponentTheme.ScaleInt(profile.Scale, LauncherComponentTheme.DialogMessageWidth);
@@ -161,19 +144,4 @@ internal sealed partial class LauncherView
         return Math.Min(estimatedHeight, maxHeight);
     }
 
-    private static bool TryGetPressedPointerPosition(InputEvent ev, out Vector2 position)
-    {
-        switch (ev)
-        {
-            case InputEventScreenTouch { Pressed: true } touch:
-                position = touch.Position;
-                return true;
-            case InputEventMouseButton { Pressed: true } mouse:
-                position = mouse.Position;
-                return true;
-            default:
-                position = Vector2.Zero;
-                return false;
-        }
-    }
 }

@@ -35,20 +35,7 @@ internal static class MobileLayoutPatches
     {
         try
         {
-            var menu = (Node)__instance;
-            ApplyMainMenuMobileLayout(menu);
-            UiScalePatches.UiScaleChanged += OnScaleChanged;
-
-            void OnScaleChanged()
-            {
-                if (!GodotObject.IsInstanceValid((GodotObject)menu) || !menu.IsInsideTree())
-                {
-                    UiScalePatches.UiScaleChanged -= OnScaleChanged;
-                    return;
-                }
-
-                ApplyMainMenuMobileLayout(menu);
-            }
+            ApplyMainMenuMobileLayout((Node)__instance);
         }
         catch (Exception ex)
         {

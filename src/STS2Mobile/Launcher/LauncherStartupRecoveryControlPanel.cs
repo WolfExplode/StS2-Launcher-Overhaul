@@ -12,7 +12,6 @@ internal sealed partial class LauncherStartupRecoveryControlPanel
     private const int TitleFontSize = 26;
     private const string ThemeFontColor = "font_color";
     private const string ThemeFontSize = "font_size";
-    private const string ThemeSeparation = "separation";
 
     private const float ReferenceShortEdge = 1080f;
     private const float ContainerMaxWidth = 820f;

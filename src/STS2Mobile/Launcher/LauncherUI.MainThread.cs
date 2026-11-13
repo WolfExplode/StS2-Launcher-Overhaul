@@ -9,10 +9,7 @@ internal sealed partial class LauncherUI
     {
         AndroidBridgeDispatcher.Pump();
         DrainMainThreadActions();
-        SyncViewportSize();
-        _view?.UpdateSystemInsets();
-        _view?.UpdateKeyboardOffset();
-        _view?.AdvanceAndroidCompositionRefresh();
+        _view?.PollAndroidDisplayChanges();
     }
 
     private void EnqueueMainThreadAction(Action action) => _mainThreadActions.Enqueue(action);

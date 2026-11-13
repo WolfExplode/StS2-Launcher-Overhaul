@@ -27,10 +27,7 @@ internal static partial class LauncherSectionSetup
 
         var body = new VBoxContainer();
         body.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        body.AddThemeConstantOverride(
-            LauncherViewLayoutMetrics.ThemeSeparation,
-            LauncherViewLayoutMetrics.ScaleInt(4, scale)
-        );
+        body.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(4, scale));
         panel.AddChild(body);
 
         body.AddChild(BuildDesktopSectionAccent(accent, scale));

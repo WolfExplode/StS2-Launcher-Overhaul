@@ -52,6 +52,6 @@ Diagnostics report the selected branch/slot, installation state and transaction,
 
 ## Validation boundary
 
-The Issue #38 suites cover N → N+1 updates, interrupted transactions, stale evidence, atomic runtime-pack promotion, selected-branch isolation, save/credential preservation, and attempt-bound handoff ordering. RC4 additionally passed 10/10 counted launches on Samsung `SM-F971B`, Android 17 / API 37. Other devices, branches, GPUs, mods, and live-service paths remain separate validation scopes.
+The runtime identity suites cover N → N+1 updates, interrupted transactions, stale evidence, atomic runtime-pack promotion, selected-branch isolation, save/credential preservation, and attempt-bound handoff ordering. Devices, branches, GPUs, mods, and live-service paths are separate validation scopes; see [Android testing status](current-android-status.md).
 
-See [Issue #38 runtime identity design](issue-38-runtime-identity-design.md) for artifact roles, failure/recovery boundaries, implementation links, and pre-fix history.
+See [Runtime identity design](runtime-identity-design.md) for artifact roles and failure/recovery boundaries.

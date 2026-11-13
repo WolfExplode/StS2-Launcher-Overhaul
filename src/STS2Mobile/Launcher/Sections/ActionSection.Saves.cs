@@ -1,14 +1,12 @@
 using Godot;
 using STS2Mobile.Launcher.Components;
-using STS2Mobile.Steam;
 
 namespace STS2Mobile.Launcher.Sections;
 
 internal sealed partial class ActionSection
 {
-    internal event System.Action SaveSyncPreferenceChanged;
+    internal event System.Action<bool> SaveSyncPreferenceChanged;
     private CheckButton _steamSaveSyncToggle;
-    private bool _saveSyncControlsBusy;
     private (
         VBoxContainer Group,
         Button SyncNowButton,
@@ -28,26 +26,11 @@ internal sealed partial class ActionSection
         {
             Name = "SteamSaveSyncToggle",
             Text = "Steam save sync",
-            ButtonPressed = SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir),
             AccessibilityName = "Steam save sync",
         };
         _steamSaveSyncToggle.AddThemeFontSizeOverride("font_size",
             LauncherComponentTheme.ScaleInt(scale, compact ? 15 : 16));
-        _steamSaveSyncToggle.Toggled += enabled =>
-        {
-            try
-            {
-                SteamSaveSyncSettings.SetEnabled(AppPaths.AppPrivateDataDir, enabled);
-            }
-            catch (System.Exception ex)
-            {
-                _steamSaveSyncToggle.SetPressedNoSignal(SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir));
-                PatchHelper.Log($"[Cloud] Could not save sync preference: {ex.Message}");
-                return;
-            }
-            SetSaveSyncControlsDisabled(_saveSyncControlsBusy);
-            SaveSyncPreferenceChanged?.Invoke();
-        };
+        _steamSaveSyncToggle.Toggled += enabled => SaveSyncPreferenceChanged?.Invoke(enabled);
         group.AddChild(_steamSaveSyncToggle);
 
         var namespaceExplanation = new StyledLabel(
@@ -113,11 +96,7 @@ internal sealed partial class ActionSection
         syncNow.AccessibilityName = "Sync now";
         LauncherButtonStyles.ApplyPrimaryAction(syncNow, scale);
 
-        var manualActions = BuildCompactActionRow(
-            actions,
-            scale,
-            _compactStackedActionRows
-        );
+        var manualActions = BuildCompactActionRow(actions, scale);
         manualActions.Name = "SaveManualActions";
 
         var pull = AddActionButton(
@@ -160,23 +139,16 @@ internal sealed partial class ActionSection
         );
     }
 
-    internal void SetSaveSyncControlsDisabled(bool disabled)
+    // Draws the whole Saves section from one presentation. busy is true while
+    // a sync or profile copy runs; transfers also need sync to be on.
+    internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation, bool busy)
     {
-        _saveSyncControlsBusy = disabled;
-        var syncDisabled = disabled || !SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir);
-        _saveSyncNowButton.Disabled = syncDisabled;
-        _savePullButton.Disabled = syncDisabled;
-        _savePushButton.Disabled = syncDisabled;
-        _copyVanillaToModdedButton.Disabled = disabled;
-    }
-
-    internal void SetSaveSyncPresentation(LauncherSaveSyncPresentation presentation)
-    {
-        var enabled = SteamSaveSyncSettings.IsEnabled(AppPaths.AppPrivateDataDir);
+        var enabled = presentation.State != LauncherSaveSyncState.Disabled;
         _steamSaveSyncToggle.SetPressedNoSignal(enabled);
-        if (!enabled)
-            presentation = LauncherSaveSyncPresentation.Disabled();
-        SetSaveSyncControlsDisabled(_saveSyncControlsBusy);
+        _saveSyncNowButton.Disabled = busy || !enabled;
+        _savePullButton.Disabled = busy || !enabled;
+        _savePushButton.Disabled = busy || !enabled;
+        _copyVanillaToModdedButton.Disabled = busy;
         _saveSyncStatus.Text = PresentationText(
             presentation.Summary,
             "Not synced yet"
@@ -205,12 +177,8 @@ internal sealed partial class ActionSection
             Columns = 2,
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        rows.AddThemeConstantOverride(
-            "h_separation",
-            LauncherViewLayoutMetrics.ScaleInt(12, scale)
-        );
-        rows.AddThemeConstantOverride(
-            "v_separation",
+        rows.SetSeparation(
+            LauncherViewLayoutMetrics.ScaleInt(12, scale),
             LauncherViewLayoutMetrics.ScaleInt(8, scale)
         );
         return rows;

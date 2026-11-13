@@ -28,7 +28,7 @@ internal sealed partial class LauncherSteamSession
         catch (Exception ex)
         {
             DropConnection(connection);
-            return SessionFailure("Connection failed", ex, "Connection failed");
+            return await SessionFailureAsync("Connection failed", ex, "Connection failed");
         }
     }
 
@@ -62,6 +62,6 @@ internal sealed partial class LauncherSteamSession
             }
         }
 
-        return SessionFailure("Connection failed", lastFailure, "Connection failed");
+        return await SessionFailureAsync("Connection failed", lastFailure, "Connection failed");
     }
 }

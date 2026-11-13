@@ -36,30 +36,14 @@ internal sealed partial class DownloadSection
         MoveChild(_downloadButton, _branchDetailsToggle.GetIndex());
     }
 
-    private static Container BuildCompactVersionControlsRow(float scale, bool compactStackedActionRows)
-    {
-        Container row = compactStackedActionRows ? new VBoxContainer() : new HBoxContainer();
-        row.Visible = false;
-        row.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
-        row.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, LauncherViewLayoutMetrics.ScaleInt(6, scale));
-        return row;
-    }
+    private static Container BuildCompactVersionControlsRow(float scale)
+        => new ResponsiveGrid(LauncherViewLayoutMetrics.ScaleInt(6, scale)) { Visible = false };
 
     private string CompactSelectedVersionHeadline()
-    {
-        if (_compactStackedActionRows)
-        {
-            return $"Version: {SteamGameBranch.CompactDisplayName(_gameBranch, CompactSelectedVersionStackedBranchLimit)}\n" + $"{CompactInstallFileScope(_gameBranch)} | Change version";
-        }
-
-        return $"Version: {SteamGameBranch.CompactDisplayName(_gameBranch, CompactSelectedVersionBranchLimit)} | {CompactInstallFileScope(_gameBranch)} | Change";
-    }
+        => $"Version: {SteamGameBranch.CompactDisplayName(_versions.Branch, CompactSelectedVersionStackedBranchLimit)}\n" + $"{CompactInstallFileScope(_versions.Branch)} | Change version";
 
     private string CompactInstallVersionHelpText()
-    {
-        var branchLimit = _compactStackedActionRows ? CompactVersionHelpStackedBranchLimit : CompactVersionHelpBranchLimit;
-        return $"Files for: {SteamGameBranch.CompactDisplayName(_gameBranch, branchLimit)} | {CompactInstallFileScope(_gameBranch)}\n" + LauncherBranchCatalog.SelectedOptionCompactStatus(_gameBranch, _availableBranches) + "\nChecked before replacement; saves and other branches stay in place";
-    }
+        => $"Files for: {SteamGameBranch.CompactDisplayName(_versions.Branch, CompactVersionHelpStackedBranchLimit)} | {CompactInstallFileScope(_versions.Branch)}\n" + LauncherBranchCatalog.SelectedOptionCompactStatus(_versions.Branch, _versions.Branches) + "\nChecked before replacement; saves and other branches stay in place";
 
     private static string CompactInstallFileScope(string branch) => string.Equals(SteamGameBranch.Normalize(branch), SteamGameBranch.Public, StringComparison.OrdinalIgnoreCase) ? "Default files" : "Separate files";
     private static void ApplySelectedVersionSummaryButtonStyle(Button button, float scale, bool compact)
@@ -158,7 +142,7 @@ internal sealed partial class DownloadSection
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             MouseDefaultCursorShape = Control.CursorShape.PointingHand,
             TooltipText = "Change game version for local files",
-            CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(_compactStackedActionRows ? LauncherSectionMetrics.CompactStackedVersionSummaryHeight : LauncherSectionMetrics.CompactVersionSummaryHeight, scale)),
+            CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.CompactStackedVersionSummaryHeight, scale)),
         };
         ApplySelectedVersionSummaryButtonStyle(button, scale, compact);
         button.Pressed += OpenCompactBranchDetailsFromSelectedVersion;
@@ -171,13 +155,11 @@ internal sealed partial class DownloadSection
         {
             VerticalAlignment = VerticalAlignment.Center,
         };
-        label.AutowrapMode = _compactStackedActionRows ? TextServer.AutowrapMode.WordSmart : compact ? TextServer.AutowrapMode.Off : TextServer.AutowrapMode.WordSmart;
-        label.ClipText = compact && !_compactStackedActionRows;
-        if (compact && !_compactStackedActionRows)
-            label.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        label.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        label.ClipText = false;
         if (compact)
         {
-            label.CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(_compactStackedActionRows ? LauncherSectionMetrics.CompactStackedVersionSummaryHeight : LauncherSectionMetrics.CompactVersionSummaryHeight, scale));
+            label.CustomMinimumSize = new Vector2(0, LauncherViewLayoutMetrics.ScaleInt(LauncherSectionMetrics.CompactStackedVersionSummaryHeight, scale));
         }
 
         label.MouseFilter = MouseFilterEnum.Ignore;

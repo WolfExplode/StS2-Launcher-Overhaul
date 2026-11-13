@@ -28,15 +28,6 @@ internal sealed partial class ActionSection
         internal bool CanChange { get; set; }
     }
 
-    private void ShowModsControls()
-    {
-        // Selection and discovery are local state. Keep them available even when
-        // account, download, or mod loading state prevents a normal launch.
-        _modsGroup.Visible = true;
-        _workshopSyncButton.Visible = true;
-        _workshopClearButton.Visible = true;
-    }
-
     internal void SetModsPresentationChecking()
     {
         _modsLaunchSummaryLabel.Text = "Checking mod files...";
@@ -58,7 +49,6 @@ internal sealed partial class ActionSection
         RefreshModModeButtons(moddedMode, presentation.EnabledCount);
         ApplyModJourneyPresentation(moddedMode, presentation.EnabledCount, presentation.SaveNamespaceLabel);
         RefreshModList(presentation.Mods);
-        UpdateBranchHelpText();
     }
 
     private void ApplyModJourneyPresentation(bool moddedMode, int enabledCount, string saveNamespace)
@@ -139,8 +129,6 @@ internal sealed partial class ActionSection
             var panel = new PanelContainer
             {
                 Name = "ModRow",
-                // Let touch drags reach the enclosing ScrollContainer.
-                MouseFilter = Control.MouseFilterEnum.Pass,
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
                 Visible = false,
             };
@@ -151,22 +139,19 @@ internal sealed partial class ActionSection
             };
             var horizontalMargin = LauncherViewLayoutMetrics.ScaleInt(10, _scale);
             var verticalMargin = LauncherViewLayoutMetrics.ScaleInt(7, _scale);
-            margin.AddThemeConstantOverride("margin_left", horizontalMargin);
-            margin.AddThemeConstantOverride("margin_right", horizontalMargin);
-            margin.AddThemeConstantOverride("margin_top", verticalMargin);
-            margin.AddThemeConstantOverride("margin_bottom", verticalMargin);
+            margin.SetMargins(horizontalMargin, verticalMargin, horizontalMargin, verticalMargin);
             panel.AddChild(margin);
             var content = new VBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             };
-            content.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(3, _scale));
+            content.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(3, _scale));
             margin.AddChild(content);
             var header = new HBoxContainer
             {
                 SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
             };
-            header.AddThemeConstantOverride("separation", LauncherViewLayoutMetrics.ScaleInt(8, _scale));
+            header.SetSeparation(LauncherViewLayoutMetrics.ScaleInt(8, _scale));
             content.AddChild(header);
             var title = new StyledLabel("", _scale, fontSize: _compact ? 14 : 15, align: HorizontalAlignment.Left)
             {
@@ -266,7 +251,7 @@ internal sealed partial class ActionSection
         var group = BuildActionGroup(scale);
         group.Name = "ModsControls";
         group.Visible = false;
-        Container modeParent = compact && !_compactStackedActionRows ? BuildCompactActionRow(group, scale, compactStackedActionRows: false) : group;
+        Container modeParent = compact ? BuildCompactActionRow(group, scale) : group;
         var playVanillaButton = AddActionButton(modeParent, "Vanilla", scale, () => SetModPlayMode(LauncherModPlayMode.Vanilla));
         LauncherButtonStyles.ApplySupportAction(playVanillaButton, scale);
         var playModdedButton = AddActionButton(modeParent, "Modded", scale, () => SetModPlayMode(LauncherModPlayMode.Modded));
@@ -283,9 +268,9 @@ internal sealed partial class ActionSection
             Name = "ModsList",
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
-        modsList.AddThemeConstantOverride("separation", Math.Max(3, (int)(4 * scale)));
+        modsList.SetSeparation(Math.Max(3, (int)(4 * scale)));
         group.AddChild(modsList);
-        Container actionsParent = compact && !_compactStackedActionRows ? BuildCompactActionRow(group, scale, compactStackedActionRows: false) : group;
+        Container actionsParent = compact ? BuildCompactActionRow(group, scale) : group;
         var workshopSyncButton = AddActionButton(actionsParent, "Update Workshop mods", scale, () => WorkshopSyncPressed?.Invoke());
         workshopSyncButton.AccessibilityName = "Update Workshop mods";
         LauncherButtonStyles.ApplyPrimaryAction(workshopSyncButton, scale);

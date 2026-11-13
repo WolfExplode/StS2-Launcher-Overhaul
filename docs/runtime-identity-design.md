@@ -1,4 +1,4 @@
-# Issue #38: runtime identity and update lifecycle
+# Runtime identity and update lifecycle
 
 This describes the current implementation at [source commit `33abc177`](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/commit/33abc177097fe55bd2c630756f55ecd5e7a60ef8), used for v0.2.436. For user actions, see [Steam version selection](steam-version-selection-user-guide.md). For a shorter overview, see [the architecture summary](steam-version-selection-architecture.md).
 
@@ -98,18 +98,6 @@ Cleanup preserves sibling branches, Workshop content, credentials, preferences u
 
 Missing, malformed, unknown-schema, or `updating` installation state cannot authorize a game launch. Older marker files do not substitute for ready state or actual-file hashes. There is no general offline migration that can infer readiness from those markers; use the recovery action shown by the launcher. `steam_branch.txt` remains part of the current completed-generation contract.
 
-## Verification and device evidence
+## Verification
 
-Use the commands and prerequisites in [Building and testing](development.md#tests). The managed suite covers identity reads, stale evidence, branch updates and selected interruption points, pack validation/promotion, branch isolation, save/credential preservation, and attempt-bound handoff. Android JVM tests cover native validation/recovery and handoff behavior. These are focused checks, not a claim that every physical-storage interruption point has been exercised.
-
-The exact [v0.2.429 RC4 APK](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/releases/tag/v0.2.429-issue38-arm64-rc4) passed 10/10 counted launches on Samsung `SM-F971B`, Android 17 / API 37: four cold, four warm, one background/resume, and one lock/unlock. The recorded audit found saves, Steam Cloud inventory, credentials, and unrelated branch/runtime data unchanged. [The runbook](runbook-android-validation.md#v02429-rc4-runtime-and-handoff-result) retains the exact artifact and result.
-
-That older APK's result does not validate v0.2.436, every device/branch/GPU/mod, live Steam save transfers, or a full N → N+1 interruption campaign. The original Pixel 9 and Xiaomi 17 Ultra RC4 reporter flows remain unconfirmed in the published record. Current build-specific evidence belongs in [Android testing status](current-android-status.md).
-
-## Pre-fix history
-
-Issue #38 exposed an earlier identity cycle: Steam replaced game files, managed code reused hashes from prior cache/manifests, and native bootstrap rejected the resulting mismatch against the actual files. The native rejection was the final check exposing stale managed evidence.
-
-The removed implementation can be inspected at the pre-fix `d101361` revision: [hash selection](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/blob/d101361290e58482c5f7795ed8d315ffdc8ffdd1/src/STS2Mobile/Launcher/GameRuntimeSlot.Hashes.cs), [hash cache](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/blob/d101361290e58482c5f7795ed8d315ffdc8ffdd1/src/STS2Mobile/Launcher/GameRuntimeSlot.HashCache.cs), and [manifest/marker fallbacks](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/blob/d101361290e58482c5f7795ed8d315ffdc8ffdd1/src/STS2Mobile/Launcher/GameRuntimeSlot.HashValidation.cs). These links describe the old failure, not current APIs.
-
-The lifecycle fix landed in [`6180d361`](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/commit/6180d361e13807aecdb6b7ec828756f236e9119b). Handoff work followed in [`809cdf82`](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/commit/809cdf827c69680df34177566433bd691aaff5ae) and [`55925130`](https://github.com/SocialHummingbird/StS2-Launcher-Overhaul/commit/559251309f68659102bcabbf12e669f9512e7776), released as RC4. The current source links above also include later changes, including the restored original mod framework.
+Use the commands and prerequisites in [Building and testing](development.md#tests). The managed suite covers identity reads, stale evidence, branch updates and selected interruption points, pack validation/promotion, branch isolation, save/credential preservation, and attempt-bound handoff. Android JVM tests cover native validation/recovery and handoff behavior. These are focused checks, not a claim that every physical-storage interruption point has been exercised. Device results for the current release are in [Android testing status](current-android-status.md).

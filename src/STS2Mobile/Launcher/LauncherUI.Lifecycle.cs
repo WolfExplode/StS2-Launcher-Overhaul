@@ -20,9 +20,7 @@ internal sealed partial class LauncherUI
         try
         {
             var viewportSize = GetViewportSize();
-            _lastViewportSize = viewportSize;
-            SetAnchorsPreset(LayoutPreset.FullRect);
-            Size = viewportSize;
+            SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
             var layoutProfile = LauncherLayoutProfile.ForViewport(viewportSize);
             var dataDir = ResolveLauncherDataDirectory();
             var powerVrCompatibility = LauncherGraphicsDeviceEvidence.CaptureAndApplyCompatibility(dataDir);

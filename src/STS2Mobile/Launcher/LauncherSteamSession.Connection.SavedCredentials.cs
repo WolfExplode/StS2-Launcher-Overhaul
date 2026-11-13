@@ -29,7 +29,7 @@ internal sealed partial class LauncherSteamSession
             }
         }
 
-        return SessionFailure(
+        return await SessionFailureAsync(
             "Connection failed",
             lastFailure,
             "Could not connect to Steam"

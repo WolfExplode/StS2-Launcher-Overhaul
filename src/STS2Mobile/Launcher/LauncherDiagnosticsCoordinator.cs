@@ -67,7 +67,6 @@ internal sealed partial class LauncherDiagnosticsCoordinator
         internal bool ShowFailureStatus { get; }
 
         internal static DiagnosticsReportWrite ManualExport() => new("Diagnostics export failed", showFailureStatus: true);
-        internal static DiagnosticsReportWrite AutomaticSnapshot() => new("Automatic diagnostics snapshot failed", showFailureStatus: false);
     }
 
     private readonly struct DiagnosticsFailure

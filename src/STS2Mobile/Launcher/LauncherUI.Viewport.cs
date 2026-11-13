@@ -4,15 +4,13 @@ namespace STS2Mobile.Launcher;
 
 internal sealed partial class LauncherUI
 {
-    private void SyncViewportSize()
+    // The launcher stays anchored to its parent's full rect, so a rotation or
+    // window resize reaches it through layout. Writing Size here instead would
+    // fix its offsets to the parent's size at that moment.
+    public override void _Notification(int what)
     {
-        var viewportSize = GetViewportSize();
-        if (_lastViewportSize.DistanceSquaredTo(viewportSize) <= 1f)
-            return;
-
-        _lastViewportSize = viewportSize;
-        Size = viewportSize;
-        _view?.UpdateViewportSize(viewportSize);
+        if (what == NotificationResized)
+            _view?.UpdateViewportSize(Size);
     }
 
     private Vector2 GetViewportSize()

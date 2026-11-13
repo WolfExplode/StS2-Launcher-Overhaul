@@ -11,6 +11,7 @@ internal sealed partial class LauncherSessionCoordinator
     private const int LocalLoginPollDelayMs = 500;
     private static readonly TimeSpan LocalLoginPollTimeout = TimeSpan.FromSeconds(180);
 
+    private readonly Func<string> _selectedBranch;
     private readonly LauncherModel _model;
     private readonly LauncherView _view;
     private readonly LauncherLaunchCoordinator _launch;
@@ -27,9 +28,11 @@ internal sealed partial class LauncherSessionCoordinator
         LauncherLaunchCoordinator launch,
         LauncherDownloadCoordinator downloads,
         Action<Action> runOnMainThread,
-        Func<bool> isUpdateCheckRunning
+        Func<bool> isUpdateCheckRunning,
+        Func<string> selectedBranch
     )
     {
+        _selectedBranch = selectedBranch;
         _model = model;
         _view = view;
         _launch = launch;

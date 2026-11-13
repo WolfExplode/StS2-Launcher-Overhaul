@@ -23,6 +23,7 @@ internal sealed partial class LauncherSessionCoordinator
         if (_model.ShouldIgnoreConnectionTimeout(sessionAttemptId))
             return;
 
+        await SaveSyncService.ReportFailureAsync(SaveSyncService.SyncFailureKind.Other);
         var outcome = CreateConnectionTimeoutOutcome();
         _runOnMainThread(() => outcome.Apply(_view, _launch));
     }
@@ -39,7 +40,7 @@ internal sealed partial class LauncherSessionCoordinator
         => _model.HasOwnershipMarker()
             ? LauncherLaunchReadiness.EvaluateDownloadedState(
                 _model.DataDir,
-                LauncherPreferences.ReadGameBranch(),
+                _selectedBranch(),
                 "connection timeout offline downloaded-state readiness"
             )
             : null;
@@ -80,10 +81,6 @@ internal sealed partial class LauncherSessionCoordinator
 
         internal void Apply(LauncherView view, LauncherLaunchCoordinator launch)
         {
-            SaveSyncService.ReportFailure(
-                SaveSyncService.SyncFailureKind.Other
-            );
-
             if (_readiness != null && _launchAction.HasValue)
             {
                 launch.ShowReadyToLaunch(
@@ -99,9 +96,6 @@ internal sealed partial class LauncherSessionCoordinator
 
             if (_logMessage != null)
                 view.AppendLog(_logMessage);
-
-            if (_launchAction.HasValue && _readiness == null)
-                launch.ShowLaunchActions(_launchAction.Value);
 
             if (_showRetry)
                 view.ShowRetry();

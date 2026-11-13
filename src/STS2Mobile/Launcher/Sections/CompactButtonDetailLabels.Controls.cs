@@ -43,7 +43,7 @@ internal static partial class CompactButtonDetailLabels
         body.OffsetRight = -LauncherViewLayoutMetrics.ScaleInt(spec.HorizontalMargin, scale);
         body.OffsetTop = LauncherViewLayoutMetrics.ScaleInt(spec.VerticalMargin, scale);
         body.OffsetBottom = -LauncherViewLayoutMetrics.ScaleInt(spec.VerticalMargin, scale);
-        body.AddThemeConstantOverride(LauncherViewLayoutMetrics.ThemeSeparation, 0);
+        body.SetSeparation(0);
         return body;
     }
 
