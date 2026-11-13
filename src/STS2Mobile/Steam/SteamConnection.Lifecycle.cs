@@ -167,6 +167,6 @@ internal sealed partial class SteamConnection
 
     private void TransitionTo(ConnectionState newState)
     {
-        State = newState;
+        _state = newState;
     }
 }

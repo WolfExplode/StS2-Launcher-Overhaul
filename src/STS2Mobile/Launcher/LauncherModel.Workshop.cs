@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using STS2Mobile.Steam;
@@ -7,7 +8,7 @@ namespace STS2Mobile.Launcher;
 
 internal partial class LauncherModel
 {
-    internal async Task StartWorkshopSyncAsync()
+    internal async Task StartWorkshopSyncAsync(Func<SteamWorkshopUpdatePlan, Task<bool>> confirm)
     {
         var run = DownloadRunGuard.TryAcquire(this);
         if (!run.Acquired)
@@ -18,9 +19,15 @@ internal partial class LauncherModel
 
         try
         {
-            await RunWithDepotConnectionAsync(
-                DepotConnectionAction.WorkshopSync(this)
-            ).ConfigureAwait(false);
+            var branch = LauncherPreferences.ReadGameBranch();
+            var connection = await GetDepotConnectionAsync().ConfigureAwait(false);
+            if (connection == null)
+            {
+                RaiseWorkshopSyncFailed("Steam is disconnected. Sign in on Home and try again.");
+                return;
+            }
+
+            await Task.Run(() => ScanAndSyncWorkshopAsync(connection, branch, confirm)).ConfigureAwait(false);
         }
         finally
         {
@@ -56,68 +63,81 @@ internal partial class LauncherModel
         }
     }
 
-    private async Task SyncWorkshopWithConnectionAsync(SteamConnection connection)
+    internal string WorkshopConnectionStatus
+        => _steamSession.TryGetConnection(out var connection) && connection.IsConnected
+            ? "Steam connected"
+            : IsConnectionAttemptState(CurrentSessionState) || connection?.IsConnecting == true
+                ? "Connecting to Steam…"
+                : "Steam disconnected";
+
+    private async Task ScanAndSyncWorkshopAsync(SteamConnection connection, string branch,
+        Func<SteamWorkshopUpdatePlan, Task<bool>> confirm)
     {
         var service = new SteamWorkshopSyncService(connection);
         service.LogMessage += RaiseWorkshopSyncLogReceived;
-        var manifest = await service.SyncAsync(LauncherPreferences.ReadGameBranch()).ConfigureAwait(false);
-        var summary = WorkshopSyncSummary(manifest);
-        RaiseWorkshopSyncLogReceived(summary);
+        service.StatusChanged += message => Raise(WorkshopSyncStatusChanged, message, nameof(WorkshopSyncStatusChanged));
+        var plan = await service.ScanAsync(branch).ConfigureAwait(false);
+        if (plan.NeedsConfirmation && !await confirm(plan).ConfigureAwait(false))
+        {
+            Raise(WorkshopSyncStatusChanged, $"Workshop changes skipped · {WorkshopScanSummary(plan)}",
+                nameof(WorkshopSyncStatusChanged));
+            return;
+        }
+
+        if (!string.Equals(branch, LauncherPreferences.ReadGameBranch(), StringComparison.Ordinal))
+            throw new InvalidOperationException("The game branch changed. Check Workshop updates again.");
+
+        var manifest = await service.ApplyAsync(plan).ConfigureAwait(false);
+        var installed = manifest.Items.Where(item => item.Status == "staged").ToDictionary(item => item.PublishedFileId);
+        var completed = plan.Items.Where(item => item.NeedsDownload && installed.ContainsKey(item.Id)).ToArray();
+        var failed = manifest.Items
+            .Where(item => item.Status == "unsupported" || item.Status?.EndsWith("failed", StringComparison.Ordinal) == true)
+            .ToDictionary(item => item.PublishedFileId);
+        var issues = plan.Items.Where(item => failed.ContainsKey(item.Id)).ToArray();
+        var remaining = manifest.Items.Select(item => item.PublishedFileId).ToHashSet();
+        var removed = plan.PotentialRemovals.Count(item => !remaining.Contains(item.PublishedFileId));
+        var summary = WorkshopScanSummary(plan);
+        if (plan.NeedsConfirmation)
+        {
+            var added = completed.Count(item => item.Installed == null);
+            summary = $"Workshop finished · {completed.Length - added} updated · {added} installed · {removed} removed";
+            if (issues.Length > 0)
+                summary += $" · {issues.Length} need attention";
+            summary += WorkshopDiscoveryNotice(plan);
+            if (completed.Length > 0 || removed > 0)
+                summary += ". Restart the game if it was already running.";
+        }
+
+        foreach (var item in issues)
+            RaiseWorkshopSyncLogReceived($"{item.Title} ({item.Id}) · {failed[item.Id].Error}");
+        if (issues.Length > 0)
+            summary += $"\n{string.Join(", ", issues.Take(3).Select(item => item.Title))}";
         RaiseWorkshopSyncCompleted(summary);
     }
 
-    private static string WorkshopSyncSummary(SteamWorkshopSyncManifest manifest)
+    internal static string WorkshopScanSummary(SteamWorkshopUpdatePlan plan)
     {
-        var staged = manifest.Items.Count(item => item.Status == "staged");
-        var unsupported = manifest.Items.Count(item => item.Status == "unsupported");
-        var failed = manifest.Items.Count(item =>
-            !string.IsNullOrWhiteSpace(item.Status)
-            && item.Status.EndsWith("failed", System.StringComparison.OrdinalIgnoreCase)
-        );
-        var missingDependencies = manifest.MissingDependencyIds?.Count ?? manifest.MissingDependencyItemCount;
-        var hasIssues = unsupported > 0 || failed > 0 || missingDependencies > 0
-            || !string.Equals(manifest.SyncStatus, "complete", System.StringComparison.Ordinal);
-        var prefix = hasIssues ? "Workshop mods need attention" : "Workshop mods updated";
-        var detail = WorkshopIssueSummary(manifest);
-        return string.IsNullOrWhiteSpace(detail)
-            ? $"{prefix}: discovery={manifest.SyncStatus}, staged={staged}, unsupported={unsupported}, failed={failed}, missingDeps={missingDependencies}"
-            : $"{prefix}: discovery={manifest.SyncStatus}, staged={staged}, unsupported={unsupported}, failed={failed}, missingDeps={missingDependencies}; {detail}";
+        var downloads = plan.Items.Count(item => item.NeedsDownload);
+        var newItems = plan.Items.Count(item => item.NeedsDownload && item.Installed == null);
+        var blocked = plan.Items.Count(item => item.Revision == null);
+        var result = downloads > 0
+            ? $"{downloads - newItems} Workshop updates · {newItems} new installs"
+            : plan.Metadata.SyncStatus == "complete" && blocked == 0
+                ? plan.Items.Count == 0 ? "No Workshop subscriptions found" : "Workshop mods are up to date"
+                : "No Workshop downloads found";
+        if (plan.PotentialRemovals.Count > 0)
+            result += $" · {plan.PotentialRemovals.Count} possible removals";
+        if (blocked > 0)
+            result += $" · {blocked} could not be checked";
+        return result + WorkshopDiscoveryNotice(plan);
     }
 
-    private static string WorkshopIssueSummary(SteamWorkshopSyncManifest manifest)
+    private static string WorkshopDiscoveryNotice(SteamWorkshopUpdatePlan plan)
     {
-        var unsupported = manifest.Items
-            .Where(item => item.Status == "unsupported")
-            .Select(FormatWorkshopIssueItem)
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Take(3)
-            .ToArray();
-        var failed = manifest.Items
-            .Where(item => !string.IsNullOrWhiteSpace(item.Status)
-                && item.Status.EndsWith("failed", System.StringComparison.OrdinalIgnoreCase))
-            .Select(FormatWorkshopIssueItem)
-            .Where(item => !string.IsNullOrWhiteSpace(item))
-            .Take(3)
-            .ToArray();
-        var parts = new System.Collections.Generic.List<string>();
-        if (unsupported.Length > 0)
-            parts.Add($"unsupported={string.Join(", ", unsupported)}");
-        if (failed.Length > 0)
-            parts.Add($"failedItems={string.Join(", ", failed)}");
-        if (manifest.MissingDependencyIds?.Count > 0)
-            parts.Add($"missingDeps={string.Join(", ", manifest.MissingDependencyIds.Take(5))}");
-
-        return string.Join("; ", parts);
-    }
-
-    private static string FormatWorkshopIssueItem(SteamWorkshopSyncManifestItem item)
-    {
-        if (item == null || item.PublishedFileId == 0)
-            return "";
-
-        var title = string.IsNullOrWhiteSpace(item.Title)
-            ? ""
-            : $" {item.Title.Trim()}";
-        return $"{item.PublishedFileId}{title}";
+        var notice = plan.Metadata.MissingDependencyItemCount > 0
+            ? $" · {plan.Metadata.MissingDependencyItemCount} dependencies unavailable" : "";
+        if (plan.Metadata.SyncStatus == "discovery-unverified")
+            notice += " · Steam subscription list could be incomplete";
+        return notice;
     }
 }

@@ -75,6 +75,7 @@ internal static partial class Program
             ("Workshop revision rejects mismatched snapshot metadata", WorkshopRevisionRejectsUnprovenVersionedSelection),
             ("Workshop revision uses coherent current metadata", WorkshopRevisionUsesCoherentCurrentMetadata),
             ("Workshop reuse uses committed revision after failed attempt", WorkshopReuseUsesCommittedRevisionAfterFailedAttempt),
+            ("Workshop scan distinguishes pending downloads from current and unknown revisions", WorkshopScanClassifiesRevisions),
             ("Workshop clear defers physical deletion", WorkshopClearDefersPhysicalDeletion),
             ("Workshop startup cleanup keeps committed generation", WorkshopStartupCleanupKeepsOnlyCommittedGeneration),
             ("Workshop retired legacy package stays retired", WorkshopRetiredLegacyPackageStaysRetired),

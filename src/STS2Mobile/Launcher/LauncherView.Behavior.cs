@@ -53,6 +53,14 @@ internal sealed partial class LauncherView
         _parent.AddChild(BuildConfirmationDialog(message, CurrentConfirmationProfile(), onConfirmed, onCancelled, confirmText, cancelText));
     }
 
+    internal void ShowWorkshopConfirmation(string message, string confirmText, System.Threading.Tasks.TaskCompletionSource<bool> choice)
+    {
+        var dialog = BuildConfirmationDialog(message, CurrentConfirmationProfile(),
+            () => choice.TrySetResult(true), () => choice.TrySetResult(false), confirmText, "Cancel");
+        dialog.TreeExiting += () => choice.TrySetResult(false);
+        _parent.AddChild(dialog);
+    }
+
     private LauncherLayoutProfile CurrentConfirmationProfile()
     {
         var viewportSize = _parent.GetViewport()?.GetVisibleRect().Size ?? _profile.ViewportSize;

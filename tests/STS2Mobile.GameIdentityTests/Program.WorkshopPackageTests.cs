@@ -117,6 +117,34 @@ internal static partial class Program
         True(!string.IsNullOrWhiteSpace(revision.Provenance), "The selected revision must retain its remote evidence provenance.");
     }
 
+    private static void WorkshopScanClassifiesRevisions()
+    {
+        using var fixture = new WorkshopPackageFixture();
+        File.WriteAllText(Path.Combine(fixture.Source, "mod.dll"), "committed");
+        var installed = fixture.Stager.Stage(new[]
+        {
+            new SteamWorkshopItem(42, "Fixture", fixture.Source, 12, manifestId: 100, status: "downloaded"),
+        }).Items.Single().Installed;
+        var detail = new PublishedFileDetails { publishedfileid = 42, result = 1, time_updated = 13, hcontent_file = 100 };
+        var info = new CPublishedFile_GetItemInfo_Response.WorkshopItemInfo
+        {
+            published_file_id = 42, time_updated = 13, manifest_id = 100,
+        };
+
+        var current = SteamWorkshopUpdateItem.Prepare(detail, info, installed, "public");
+        True(current.CanReuse && !current.NeedsDownload, "A timestamp change alone must not queue a download.");
+        var newInstall = SteamWorkshopUpdateItem.Prepare(detail, info, null, "public");
+        True(newInstall.NeedsDownload && newInstall.Installed == null, "A new subscription needs installation.");
+
+        detail.hcontent_file = 101;
+        var unknown = SteamWorkshopUpdateItem.Prepare(detail, info, installed, "public");
+        True(!unknown.CanReuse && !unknown.NeedsDownload && !string.IsNullOrEmpty(unknown.Error),
+            "Incoherent Steam metadata must be reported as unknown without queuing a download.");
+        info.manifest_id = 101;
+        var update = SteamWorkshopUpdateItem.Prepare(detail, info, installed, "public");
+        True(update.NeedsDownload && update.Installed == installed, "A different compatible manifest is an update.");
+    }
+
     private static void WorkshopReuseUsesCommittedRevisionAfterFailedAttempt()
     {
         using var fixture = new WorkshopPackageFixture();

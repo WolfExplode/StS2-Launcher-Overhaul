@@ -38,7 +38,8 @@ internal sealed class SteamWorkshopStager
 
     internal SteamWorkshopSyncManifest Stage(
         IReadOnlyCollection<SteamWorkshopItem> items,
-        SteamWorkshopSyncMetadata metadata = null
+        SteamWorkshopSyncMetadata metadata = null,
+        Action<string> reportStatus = null
     )
     {
         Directory.CreateDirectory(_downloadsDirectory);
@@ -63,6 +64,8 @@ internal sealed class SteamWorkshopStager
         foreach (var item in items ?? Array.Empty<SteamWorkshopItem>())
         {
             previous.TryGetValue(item.PublishedFileId, out var installed);
+            if (item.Status == "downloaded" && !item.ReusedCachedDownload)
+                reportStatus?.Invoke($"Installing {item.Title}…");
             var entry = StageItem(item, installed);
             manifest.Items.Add(entry);
         }

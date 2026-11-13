@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,103 +39,89 @@ internal sealed class SteamWorkshopSyncService
     }
 
     internal event Action<string> LogMessage;
+    internal event Action<string> StatusChanged;
 
-    internal async Task<SteamWorkshopSyncManifest> SyncAsync(string gameBranch, CancellationToken ct = default)
+    internal async Task<SteamWorkshopUpdatePlan> ScanAsync(string gameBranch, CancellationToken ct = default)
     {
-        Directory.CreateDirectory(_downloadsDirectory);
-        Directory.CreateDirectory(_stagedDirectory);
+        ReportStatus("Checking Steam Workshop subscriptions…");
+        var subscriptions = await _connection.GetWorkshopSubscriptionsAsync().ConfigureAwait(false);
+        var resolved = await ExpandDependenciesAsync(subscriptions, ct).ConfigureAwait(false);
+
+        ReportStatus($"Checking revisions for {resolved.Details.Count} Workshop items…");
+        var itemInfo = await _connection.GetWorkshopItemInfoAsync(resolved.Details).ConfigureAwait(false);
         var stager = new SteamWorkshopStager(_downloadsDirectory, _stagedDirectory, _manifestPath);
-
-        Log("Discovering subscribed Workshop items");
-        IReadOnlyList<PublishedFileDetails> subscriptions;
-        try
-        {
-            subscriptions = await _connection.GetWorkshopSubscriptionsAsync().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            var message = ex.Message;
-            stager.SaveFailure(new SteamWorkshopSyncMetadata
-            {
-                SubscriptionQueryType = _connection.LastWorkshopSubscriptionQueryType,
-                SubscriptionQueryAttempts = _connection.LastWorkshopSubscriptionQueryAttempts,
-                SyncStatus = "discovery-failed",
-                SyncError = message,
-            });
-            throw;
-        }
-
-        ResolvedWorkshopItems resolved;
-        IReadOnlyDictionary<ulong, CPublishedFile_GetItemInfo_Response.WorkshopItemInfo> itemInfo;
-        try
-        {
-            resolved = await ExpandDependenciesAsync(subscriptions, ct).ConfigureAwait(false);
-            itemInfo = await _connection.GetWorkshopItemInfoAsync(resolved.Details).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            stager.SaveFailure(new SteamWorkshopSyncMetadata
-            {
-                SubscriptionQueryType = _connection.LastWorkshopSubscriptionQueryType,
-                SubscriptionQueryAttempts = _connection.LastWorkshopSubscriptionQueryAttempts,
-                SyncStatus = "metadata-failed",
-                SyncError = ex.Message,
-            });
-            throw;
-        }
-        Log(
-            $"Discovered {subscriptions.Count} subscribed item(s), {resolved.DiscoveredDependencyItemCount} dependency item(s), {resolved.MissingDependencyIds.Count} missing dependency item(s)"
-        );
-
-        Dictionary<ulong, SteamWorkshopSyncManifestItem> previousItems = null;
+        var previousItems = new Dictionary<ulong, SteamWorkshopSyncManifestItem>();
         try
         {
             previousItems = stager.LoadManifest().Items.ToDictionary(item => item.PublishedFileId);
         }
         catch (SteamWorkshopInventoryException ex)
         {
-            Log($"Existing Workshop inventory cannot be reused: {ex.Message} Preparing a complete replacement from Steam.");
+            if (resolved.Details.Count == 0)
+                throw;
+            Log($"Existing Workshop inventory cannot be reused: {ex.Message}");
         }
 
         SteamWorkshopBranchOrder branchOrder = null;
-        try
+        if (resolved.Details.Any(detail => detail.author_snapshots.Count > 0))
         {
-            branchOrder = await _connection.GetWorkshopGameBranchOrderAsync().ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-            Log($"Game branch ordering advisory is unknown: {ex.Message}");
+            try
+            {
+                branchOrder = await _connection.GetWorkshopGameBranchOrderAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log($"Game branch ordering advisory is unknown: {ex.Message}");
+            }
         }
 
-        using var downloader = new SteamWorkshopDownloader(_connection, _downloadsDirectory);
-        downloader.LogMessage += Log;
-        var downloadedItems = await downloader.DownloadAsync(
-            resolved.Details,
-            itemInfo,
-            resolved.SubscribedItemIds,
-            resolved.DependencyParents,
-            gameBranch,
-            previousItems,
-            ct,
-            branchOrder
-        ).ConfigureAwait(false);
-
-        var manifest = stager.Stage(downloadedItems, new SteamWorkshopSyncMetadata
+        var items = resolved.Details.Select(detail =>
+        {
+            itemInfo.TryGetValue(detail.publishedfileid, out var info);
+            previousItems.TryGetValue(detail.publishedfileid, out var previous);
+            return SteamWorkshopUpdateItem.Prepare(detail, info, previous?.Installed, gameBranch, branchOrder);
+        }).ToArray();
+        var discoveryVerified = _connection.LastWorkshopSubscriptionQueryType != "community-web";
+        var metadata = new SteamWorkshopSyncMetadata
         {
             SubscriptionQueryType = _connection.LastWorkshopSubscriptionQueryType,
             SubscriptionQueryAttempts = _connection.LastWorkshopSubscriptionQueryAttempts,
-            SyncStatus = resolved.MissingDependencyIds.Count != 0 ? "dependencies-incomplete"
-                : _connection.LastWorkshopSubscriptionQueryType == "community-web" ? "discovery-unverified" : "complete",
+            SyncStatus = !discoveryVerified ? "discovery-unverified"
+                : resolved.MissingDependencyIds.Count != 0 ? "dependencies-incomplete" : "complete",
             SubscribedItemCount = resolved.SubscribedItemIds.Count,
             DependencyItemCount = resolved.DiscoveredDependencyItemCount,
-            TotalItemCount = resolved.Details.Count,
+            TotalItemCount = items.Length,
             MissingDependencyItemCount = resolved.MissingDependencyIds.Count,
             MissingDependencyIds = resolved.MissingDependencyIds,
             GameBranchOrder = branchOrder?.Branches,
             GameBranchOrderProvenance = SteamWorkshopRevisionResolver.BranchOrderProvenance(branchOrder),
-        });
-        Log(FormatSummary(manifest));
-        return manifest;
+        };
+        var observed = items.Select(item => item.Id).ToHashSet();
+        var potentialRemovals = metadata.SyncStatus == "complete"
+            ? previousItems.Values.Where(item => item.Installed != null && !observed.Contains(item.PublishedFileId)).ToArray()
+            : Array.Empty<SteamWorkshopSyncManifestItem>();
+        return new SteamWorkshopUpdatePlan(items, potentialRemovals, metadata,
+            resolved.SubscribedItemIds, resolved.DependencyParents);
+    }
+
+    internal async Task<SteamWorkshopSyncManifest> ApplyAsync(SteamWorkshopUpdatePlan plan, CancellationToken ct = default)
+    {
+        using var downloader = new SteamWorkshopDownloader(_connection, _downloadsDirectory);
+        downloader.LogMessage += Log;
+        downloader.StatusChanged += message => StatusChanged?.Invoke(message);
+        var downloadedItems = await downloader.DownloadAsync(
+            plan.Items, plan.SubscribedItemIds, plan.DependencyParents, ct
+        ).ConfigureAwait(false);
+
+        ReportStatus("Saving Workshop inventory…");
+        var stager = new SteamWorkshopStager(_downloadsDirectory, _stagedDirectory, _manifestPath);
+        return stager.Stage(downloadedItems, plan.Metadata, ReportStatus);
+    }
+
+    private void ReportStatus(string message)
+    {
+        Log(message);
+        StatusChanged?.Invoke(message);
     }
 
     private async Task<ResolvedWorkshopItems> ExpandDependenciesAsync(
@@ -246,17 +231,6 @@ internal sealed class SteamWorkshopSyncService
             pendingIds.Remove(id);
 
         return ids;
-    }
-
-    private static string FormatSummary(SteamWorkshopSyncManifest manifest)
-    {
-        var staged = manifest.Items.Count(item => item.Status == "staged");
-        var unsupported = manifest.Items.Count(item => item.Status == "unsupported");
-        var failed = manifest.Items.Count(item =>
-            !string.IsNullOrWhiteSpace(item.Status)
-            && item.Status.EndsWith("failed", StringComparison.OrdinalIgnoreCase)
-        );
-        return $"Workshop preparation finished: discovery={manifest.SyncStatus}, staged={staged}, unsupported={unsupported}, failed={failed}";
     }
 
     private void Log(string message)

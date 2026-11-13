@@ -28,7 +28,7 @@ internal sealed partial class LauncherController
         _selectedBranch = LauncherPreferences.ReadGameBranch();
         _model = model;
         _view = view;
-        _workshop = new LauncherWorkshopCoordinator(model, view, RefreshModsPresentation);
+        _workshop = new LauncherWorkshopCoordinator(model, view, RefreshModsPresentation, runOnMainThread);
         _diagnostics = new LauncherDiagnosticsCoordinator(model, view);
         _versions = new LauncherVersionCoordinator(model, view, () => _selectedBranch);
         _launch = new LauncherLaunchCoordinator(
@@ -96,6 +96,8 @@ internal sealed partial class LauncherController
             StartAutomaticSaveSync();
         STS2Mobile.PatchHelper.Log("Launcher controller phase complete: start session flow");
     }
+
+    internal void PollWorkshopConnection() => _workshop.PollConnection();
 
     internal void RestoreAfterFailedHandoff(string attemptId)
     {

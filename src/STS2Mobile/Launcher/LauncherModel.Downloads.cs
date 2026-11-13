@@ -22,6 +22,7 @@ internal partial class LauncherModel
     internal event Action<string> BranchCatalogRefreshFailed;
     internal event Action<string> WorkshopSyncLogReceived;
     internal event Action<string> WorkshopSyncCompleted;
+    internal event Action<string> WorkshopSyncStatusChanged;
     internal event Action<string> WorkshopSyncFailed;
     internal event Action<int> WorkshopClearCompleted;
     internal event Action<string> WorkshopClearFailed;
@@ -47,7 +48,6 @@ internal partial class LauncherModel
         });
         internal static DepotConnectionAction UpdateCheck(LauncherModel model, string branch) => new(message => model.RaiseUpdateCheckFailed(branch, message), connection => model.CheckForUpdatesWithConnectionAsync(connection, branch));
         internal static DepotConnectionAction BranchCatalogRefresh(LauncherModel model) => new(model.RaiseBranchCatalogRefreshFailed, model.RefreshBranchCatalogWithConnectionAsync);
-        internal static DepotConnectionAction WorkshopSync(LauncherModel model) => new(model.RaiseWorkshopSyncFailed, model.SyncWorkshopWithConnectionAsync);
         internal async Task RunAsync(SteamConnection connection) => await Run(connection).ConfigureAwait(false);
         internal void FailNotConnected() => RaiseFailure(NotConnectedMessage);
     }

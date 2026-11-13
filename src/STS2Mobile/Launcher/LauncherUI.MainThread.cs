@@ -9,6 +9,7 @@ internal sealed partial class LauncherUI
     {
         AndroidBridgeDispatcher.Pump();
         DrainMainThreadActions();
+        _controller?.PollWorkshopConnection();
         _view?.PollAndroidDisplayChanges();
     }
 

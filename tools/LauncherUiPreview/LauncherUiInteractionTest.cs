@@ -175,10 +175,11 @@ internal static class LauncherUiInteractionTest
             .ToArray();
         Expect(stopped.Length == 0, "Controls inside the page must pass touch drags to it: " + string.Join(", ", stopped));
 
-        scroll.ScrollVertical = 0;
-        await Frames(3);
         var firstToggle = Descendants<CheckButton>(FindUniqueVisibleNamed<Control>(root, "ModsList"))
-            .First(toggle => IsLiveAndVisible(toggle) && toggle.Name == "ModEnabledToggle" && scroll.GetGlobalRect().Encloses(toggle.GetGlobalRect()));
+            .First(toggle => IsLiveAndVisible(toggle) && toggle.Name == "ModEnabledToggle");
+        scroll.EnsureControlVisible(firstToggle);
+        await Frames(3);
+        var dragStartOffset = scroll.ScrollVertical;
         var toggleStart = firstToggle.GetGlobalRect().GetCenter();
         Expect(!firstToggle.Disabled, "The drag fixture needs an enabled toggle.");
         var wasEnabled = firstToggle.ButtonPressed;
@@ -187,10 +188,10 @@ internal static class LauncherUiInteractionTest
         await Drag(toggleStart, toggleStart);
         Expect(firstToggle.ButtonPressed == wasEnabled, "A second tap must restore the mod toggle: " + Geometry());
         root.GetViewport().GuiReleaseFocus();
-        scroll.ScrollVertical = 0;
+        scroll.ScrollVertical = dragStartOffset;
         await Frames(3);
         await Drag(toggleStart, toggleStart - new Vector2(0, firstToggle.Size.Y * 2));
-        Expect(scroll.ScrollVertical > 0, "A finger drag that starts on a mod toggle must scroll the page: " + Geometry());
+        Expect(scroll.ScrollVertical > dragStartOffset, "A finger drag that starts on a mod toggle must scroll the page: " + Geometry());
         Expect(firstToggle.ButtonPressed == wasEnabled, "Drag-scrolling must not toggle the mod it started on: " + Geometry());
         root.GetViewport().GuiReleaseFocus();
 
@@ -1400,7 +1401,7 @@ internal static class LauncherUiInteractionTest
             LauncherDestination.Home => "Play Vanilla",
             LauncherDestination.Saves => "Sync now",
             LauncherDestination.Versions => "Check for updates",
-            LauncherDestination.Mods => "Update Workshop mods",
+            LauncherDestination.Mods => "Check Workshop updates",
             LauncherDestination.Help => "Safe Start",
             _ => throw new ArgumentOutOfRangeException(nameof(destination)),
         };
@@ -1440,6 +1441,8 @@ internal static class LauncherUiInteractionTest
                 break;
             case LauncherDestination.Mods:
                 _ = FindUniqueVisibleNamed<Control>(root, "ModsControls");
+                AssertVisibleLabelText(root, "WorkshopConnectionStatus", "Steam disconnected");
+                AssertVisibleLabelText(root, "WorkshopUpdateStatus", "Workshop updates have not been checked.");
                 break;
             case LauncherDestination.Help:
                 Expect(

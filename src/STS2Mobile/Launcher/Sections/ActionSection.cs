@@ -48,6 +48,8 @@ internal sealed partial class ActionSection : VBoxContainer
     private readonly Button _updateButton;
     private readonly Button _refreshVersionsButton;
     private readonly Button _redownloadButton;
+    private readonly Label _workshopConnectionLabel;
+    private readonly Label _workshopStatusLabel;
     private readonly Button _workshopSyncButton;
     private readonly Button _workshopClearButton;
     private readonly VBoxContainer _saveSyncGroup;
@@ -86,6 +88,9 @@ internal sealed partial class ActionSection : VBoxContainer
     private string _homeSyncState = "Not synced yet";
     private LauncherVersionsState _versions = LauncherVersionsState.Initial;
     private string _rendererMode = LauncherRendererMode.Auto;
+    internal void SetWorkshopConnectionStatus(string status) => _workshopConnectionLabel.Text = status;
+    internal void SetWorkshopStatus(string status) => _workshopStatusLabel.Text = status;
+
     internal void SetWorkshopButtonsDisabled(bool disabled)
     {
         _workshopButtonsDisabled = disabled;
@@ -221,6 +226,8 @@ internal sealed partial class ActionSection : VBoxContainer
         _playModdedButton = modsControls.PlayModdedButton;
         _modsLaunchSummaryLabel = modsControls.LaunchSummaryLabel;
         _modsList = modsControls.ModsList;
+        _workshopConnectionLabel = modsControls.WorkshopConnectionLabel;
+        _workshopStatusLabel = modsControls.WorkshopStatusLabel;
         _workshopSyncButton = modsControls.WorkshopSyncButton;
         _workshopClearButton = modsControls.WorkshopClearButton;
         var supportControls = BuildSupportControls(scale, compact, supportToolsParent);

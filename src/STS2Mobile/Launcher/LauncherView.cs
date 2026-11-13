@@ -223,6 +223,8 @@ internal sealed partial class LauncherView
     internal void SetSelectedVersionOperationRunning(bool running)
         => SetVersions(_versions with { SelectedVersionOperationRunning = running });
 
+    internal void SetWorkshopConnectionStatus(string status) => Actions.SetWorkshopConnectionStatus(status);
+    internal void SetWorkshopStatus(string status) => Actions.SetWorkshopStatus(status);
     internal void SetWorkshopButtonsDisabled(bool disabled) => Actions.SetWorkshopButtonsDisabled(disabled);
     internal void SetLaunchInProgress(bool inProgress)
     {

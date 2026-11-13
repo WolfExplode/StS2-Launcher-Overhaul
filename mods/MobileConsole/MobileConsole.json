@@ -1,0 +1,11 @@
+{
+  "id": "MobileConsole",
+  "name": "Mobile Console",
+  "author": "Mobile Console contributors",
+  "description": "Open and use the developer console with touch controls on Android.",
+  "version": "1.1.0",
+  "has_dll": true,
+  "has_pck": false,
+  "dependencies": [],
+  "affects_gameplay": true
+}

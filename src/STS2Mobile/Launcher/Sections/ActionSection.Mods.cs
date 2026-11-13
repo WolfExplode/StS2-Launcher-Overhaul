@@ -226,13 +226,15 @@ internal sealed partial class ActionSection
 
     private readonly struct ModsControls
     {
-        internal ModsControls(VBoxContainer group, Button playVanillaButton, Button playModdedButton, Label launchSummaryLabel, VBoxContainer modsList, Button workshopSyncButton, Button workshopClearButton)
+        internal ModsControls(VBoxContainer group, Button playVanillaButton, Button playModdedButton, Label launchSummaryLabel, VBoxContainer modsList, Label workshopConnectionLabel, Label workshopStatusLabel, Button workshopSyncButton, Button workshopClearButton)
         {
             Group = group;
             PlayVanillaButton = playVanillaButton;
             PlayModdedButton = playModdedButton;
             LaunchSummaryLabel = launchSummaryLabel;
             ModsList = modsList;
+            WorkshopConnectionLabel = workshopConnectionLabel;
+            WorkshopStatusLabel = workshopStatusLabel;
             WorkshopSyncButton = workshopSyncButton;
             WorkshopClearButton = workshopClearButton;
         }
@@ -242,6 +244,8 @@ internal sealed partial class ActionSection
         internal Button PlayModdedButton { get; }
         internal Label LaunchSummaryLabel { get; }
         internal VBoxContainer ModsList { get; }
+        internal Label WorkshopConnectionLabel { get; }
+        internal Label WorkshopStatusLabel { get; }
         internal Button WorkshopSyncButton { get; }
         internal Button WorkshopClearButton { get; }
     }
@@ -269,10 +273,20 @@ internal sealed partial class ActionSection
             SizeFlagsHorizontal = Control.SizeFlags.ExpandFill,
         };
         modsList.SetSeparation(Math.Max(3, (int)(4 * scale)));
-        group.AddChild(modsList);
+        var workshopConnectionLabel = new StyledLabel("Steam disconnected", scale, fontSize: 14, align: HorizontalAlignment.Left)
+        {
+            Name = "WorkshopConnectionStatus",
+        };
+        group.AddChild(workshopConnectionLabel);
+        var workshopStatusLabel = new StyledLabel("Workshop updates have not been checked.", scale, fontSize: 14, align: HorizontalAlignment.Left)
+        {
+            Name = "WorkshopUpdateStatus",
+            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+        };
+        group.AddChild(workshopStatusLabel);
         Container actionsParent = compact ? BuildCompactActionRow(group, scale) : group;
-        var workshopSyncButton = AddActionButton(actionsParent, "Update Workshop mods", scale, () => WorkshopSyncPressed?.Invoke());
-        workshopSyncButton.AccessibilityName = "Update Workshop mods";
+        var workshopSyncButton = AddActionButton(actionsParent, "Check Workshop updates", scale, () => WorkshopSyncPressed?.Invoke());
+        workshopSyncButton.AccessibilityName = "Check Workshop updates";
         LauncherButtonStyles.ApplyPrimaryAction(workshopSyncButton, scale);
         SetCompactActionButtonText(workshopSyncButton, workshopSyncButton.Text);
         var workshopClearButton = AddActionButton(actionsParent, "Remove downloaded Workshop mods\u2026", scale, () => WorkshopClearPressed?.Invoke());
@@ -281,7 +295,9 @@ internal sealed partial class ActionSection
         workshopClearButton.TooltipText = "Review before removing downloaded Workshop mods.";
         workshopClearButton.AccessibilityDescription = workshopClearButton.TooltipText;
         SetCompactActionButtonText(workshopClearButton, workshopClearButton.Text);
+        group.AddChild(modsList);
         AddChild(group);
-        return new ModsControls(group, playVanillaButton, playModdedButton, launchSummaryLabel, modsList, workshopSyncButton, workshopClearButton);
+        return new ModsControls(group, playVanillaButton, playModdedButton, launchSummaryLabel, modsList,
+            workshopConnectionLabel, workshopStatusLabel, workshopSyncButton, workshopClearButton);
     }
 }

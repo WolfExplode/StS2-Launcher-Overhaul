@@ -5,7 +5,7 @@ The launcher downloads complete Steam Workshop packages and lets you choose whic
 ## Use mods
 
 1. Subscribe to the mods you want on Steam.
-2. Open **Mods** in the launcher and choose **Update Workshop mods**.
+2. Open **Mods** in the launcher and choose **Check Workshop updates**. Review any updates, new installs, or possible removals, then apply the changes. The Mods page shows the Steam connection, active download, and final result.
 3. Choose **Modded**, enable the mods you want, and check any dependency warnings.
 4. Return to Home and start the game.
 

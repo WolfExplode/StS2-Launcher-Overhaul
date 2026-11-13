@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RuntimeDir Condition="'$(RuntimeDir)' == ''">../../upstream/godot-export/.godot/mono/publish/arm64</RuntimeDir>
+    <GameAssembly Condition="'$(GameAssembly)' == ''">$(RuntimeDir)/sts2.dll</GameAssembly>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="GodotSharp" HintPath="$(RuntimeDir)/GodotSharp.dll" Private="false" />
+    <Reference Include="sts2" HintPath="$(GameAssembly)" Private="false" />
+    <None Update="MobileConsole.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -53,7 +54,8 @@ internal sealed partial class DepotDownloader
         var targetRoot = Path.GetFullPath(targetDirectory);
         Directory.CreateDirectory(Path.GetDirectoryName(targetRoot) ?? _dataDir);
 
-        _servers = await LoadCdnServersAsync(ct).ConfigureAwait(false);
+        if (_servers.Count == 0)
+            _servers = await LoadCdnServersAsync(ct).ConfigureAwait(false);
         var depot = await ResolveWorkshopDepotManifestAsync(manifestId).ConfigureAwait(false);
         Log(
             $"Workshop depot manifest {manifestId} for {displayName} maps to depot {depot.DepotId} branch '{depot.ManifestRequestBranch}'"
@@ -76,6 +78,7 @@ internal sealed partial class DepotDownloader
         ).ConfigureAwait(false);
 
         ValidateWorkshopDepotManifest(manifest);
+        ResetDepotProgress(manifest.Files.Where(file => !file.Flags.HasFlag(EDepotFileFlag.Directory)).ToArray());
         await DownloadWorkshopDepotFilesAtomicallyAsync(
             manifest,
             depot.DepotId,
@@ -242,23 +245,42 @@ internal sealed partial class DepotDownloader
         DeleteQuietly(tempPath);
         try
         {
-            using var fs = File.Create(tempPath);
-            foreach (var chunk in file.Chunks.OrderBy(c => c.Offset))
+            using var handle = File.OpenHandle(tempPath, FileMode.CreateNew, FileAccess.Write,
+                FileShare.None, FileOptions.Asynchronous);
+            var chunks = file.Chunks
+                .Where(chunk => file.TotalSize != 0 || chunk.Offset != 0 || chunk.UncompressedLength != 0)
+                .OrderBy(chunk => chunk.Offset)
+                .ToArray();
+            ulong previousEnd = 0;
+            foreach (var chunk in chunks)
             {
-                ct.ThrowIfCancellationRequested();
-                if (file.TotalSize == 0 && chunk.Offset == 0 && chunk.UncompressedLength == 0)
-                    continue;
-
                 ValidateChunkBounds(fileName, file.TotalSize, chunk);
                 ValidateChunkSize(fileName, chunk);
-                await DownloadAndWriteChunkAsync(
-                    fs,
-                    depotId,
-                    chunk,
-                    depotKey,
-                    fileName
-                ).ConfigureAwait(false);
+                if (chunk.Offset < previousEnd)
+                    throw new IOException($"Workshop depot chunks overlap for {fileName}");
+                previousEnd = chunk.Offset + chunk.UncompressedLength;
             }
+
+            await Parallel.ForEachAsync(chunks, new ParallelOptions
+            {
+                MaxDegreeOfParallelism = MaxConcurrentDownloads,
+                CancellationToken = ct,
+            }, async (chunk, token) =>
+            {
+                var buffer = ArrayPool<byte>.Shared.Rent(checked((int)chunk.UncompressedLength));
+                try
+                {
+                    var written = await DownloadChunkWithRetriesAsync(depotId, chunk, buffer, depotKey, fileName)
+                        .ConfigureAwait(false);
+                    await RandomAccess.WriteAsync(handle, buffer.AsMemory(0, written), (long)chunk.Offset, token)
+                        .ConfigureAwait(false);
+                    RecordChunkWritten(written);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
+                }
+            }).ConfigureAwait(false);
         }
         catch
         {

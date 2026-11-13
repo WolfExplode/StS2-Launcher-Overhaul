@@ -64,6 +64,9 @@ internal sealed partial class SteamConnection : IDisposable
     private int _teardownStarted;
     private ulong _appAccessToken;
 
-    private ConnectionState State { get; set; } = ConnectionState.Idle;
-    private bool IsConnected => State == ConnectionState.Connected;
+    private volatile ConnectionState _state = ConnectionState.Idle;
+    private ConnectionState State => _state;
+
+    internal bool IsConnected => State == ConnectionState.Connected;
+    internal bool IsConnecting => State == ConnectionState.Connecting;
 }
